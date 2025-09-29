@@ -25,9 +25,15 @@ export const RetrievalSearchRequestSchema = z.object({
   score_threshold: z.number().min(0).max(1).optional(),
 });
 
+export const DeleteDocumentRequestSchema = z.object({
+  userId: z.number().int().positive("User ID must be a positive integer"),
+  knowledgeBaseId: z.number().int().positive("Knowledge base ID must be a positive integer"),
+});
+
 // Type definitions
 export type EmbeddingsRequestInput = z.infer<typeof EmbeddingsRequestSchema>;
 export type RetrievalSearchRequestInput = z.infer<typeof RetrievalSearchRequestSchema>;
+export type DeleteDocumentRequestInput = z.infer<typeof DeleteDocumentRequestSchema>;
 
 export interface EmbeddingData {
   object: "embedding";
@@ -63,35 +69,48 @@ export interface HealthCheckResponse {
     endpoints: {
       embeddings: string;
       retrieval: string;
+      documents: string;
     };
+  };
+}
+
+export interface DeleteDocumentResponse {
+  message: string;
+  documentId: number;
+  knowledgeBaseId: number;
+  userId: number;
+}
+
+export interface ApiError {
+  error: {
+    message: string;
   };
 }
 
 // API Client
 export class VectorsGatewayClient {
   private baseUrl: string;
+  private apiKey: string;
 
-  constructor(baseUrl: string = BASE_URL) {
+  constructor(apiKey: string, baseUrl: string = BASE_URL) {
     this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
   }
 
   private async _request<T>(
     method: string,
     path: string,
     data: any = null,
-    queryParams: Record<string, string> | null = null
+    headers: Record<string, string> = {}
   ): Promise<T> {
     const url = new URL(`${this.baseUrl}${path}`);
-    if (queryParams) {
-      Object.keys(queryParams).forEach((key) =>
-        url.searchParams.append(key, queryParams[key])
-      );
-    }
 
     const options: RequestInit = {
       method,
       headers: {
         "Content-Type": "application/json",
+        "x-api-key": this.apiKey,
+        ...headers,
       },
     };
 
@@ -103,66 +122,165 @@ export class VectorsGatewayClient {
     const json = await response.json();
 
     if (!response.ok) {
-      throw new Error(json.error || "Something went wrong");
+      const error = json as ApiError;
+      throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
     }
     return json as T;
   }
 
-  async getEmbeddings(
-    embeddingsData: EmbeddingsRequestInput,
-    userId: string
+  /**
+   * Create embeddings for text using LiteLLM
+   */
+  async createEmbeddings(
+    input: string | string[],
+    model: string = "openai/bge-m3:latest",
+    userId: string = "default-user"
   ): Promise<EmbeddingsResponse> {
-    const parsedData = EmbeddingsRequestSchema.parse(embeddingsData);
-    
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+    const data = EmbeddingsRequestSchema.parse({
+      model,
+      input,
+      user: userId,
+    });
+
+    return this._request<EmbeddingsResponse>("POST", "/v1/embeddings", data, {
       "x-user-id": userId,
-    };
-
-    const options: RequestInit = {
-      method: "POST",
-      headers,
-      body: JSON.stringify(parsedData),
-    };
-
-    const response = await fetch(`${this.baseUrl}/v1/embeddings`, options);
-    const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error(json.error?.message || "Something went wrong");
-    }
-    return json as EmbeddingsResponse;
+    });
   }
 
-  async searchRetrieval(
-    searchData: RetrievalSearchRequestInput,
-    userId: string
+  /**
+   * Search for similar documents using semantic search
+   */
+  async searchDocuments(
+    query: string,
+    userId: number,
+    knowledgeBaseId: number,
+    options: {
+      documentId?: number;
+      limit?: number;
+      scoreThreshold?: number;
+    } = {}
   ): Promise<RetrievalSearchResponse> {
-    const parsedData = RetrievalSearchRequestSchema.parse(searchData);
-    
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "x-user-id": userId,
-    };
+    const data = RetrievalSearchRequestSchema.parse({
+      query,
+      userId,
+      knowledgeBaseId,
+      documentId: options.documentId,
+      limit: options.limit,
+      score_threshold: options.scoreThreshold,
+    });
 
-    const options: RequestInit = {
-      method: "POST",
-      headers,
-      body: JSON.stringify(parsedData),
-    };
-
-    const response = await fetch(`${this.baseUrl}/v1/retrieval/search`, options);
-    const json = await response.json();
-
-    if (!response.ok) {
-      throw new Error(json.error?.message || "Something went wrong");
-    }
-    return json as RetrievalSearchResponse;
+    return this._request<RetrievalSearchResponse>("POST", "/v1/retrieval/search", data);
   }
 
+  /**
+   * Search within a specific document
+   */
+  async searchInDocument(
+    query: string,
+    userId: number,
+    knowledgeBaseId: number,
+    documentId: number,
+    options: {
+      limit?: number;
+      scoreThreshold?: number;
+    } = {}
+  ): Promise<RetrievalSearchResponse> {
+    return this.searchDocuments(query, userId, knowledgeBaseId, {
+      documentId,
+      ...options,
+    });
+  }
+
+  /**
+   * Search across entire knowledge base
+   */
+  async searchKnowledgeBase(
+    query: string,
+    userId: number,
+    knowledgeBaseId: number,
+    options: {
+      limit?: number;
+      scoreThreshold?: number;
+    } = {}
+  ): Promise<RetrievalSearchResponse> {
+    return this.searchDocuments(query, userId, knowledgeBaseId, options);
+  }
+
+  /**
+   * Delete a document and all its vectors
+   */
+  async deleteDocument(
+    documentId: number,
+    userId: number,
+    knowledgeBaseId: number
+  ): Promise<DeleteDocumentResponse> {
+    const data = DeleteDocumentRequestSchema.parse({
+      userId,
+      knowledgeBaseId,
+    });
+
+    return this._request<DeleteDocumentResponse>(
+      "DELETE",
+      `/v1/documents/${documentId}`,
+      data
+    );
+  }
+
+  /**
+   * Check service health and get API information
+   */
   async healthCheck(): Promise<HealthCheckResponse> {
     return this._request<HealthCheckResponse>("GET", "/");
+  }
+
+  /**
+   * Get service information and available endpoints
+   */
+  async getServiceInfo(): Promise<HealthCheckResponse> {
+    return this.healthCheck();
   }
 }
 
 export default VectorsGatewayClient;
+
+/**
+ * Example usage:
+ * 
+ * ```typescript
+ * import { VectorsGatewayClient } from './lib/client';
+ * 
+ * const client = new VectorsGatewayClient('your-api-key');
+ * 
+ * // Create embeddings
+ * const embeddings = await client.createEmbeddings('Hello world');
+ * // Or with custom model and user
+ * const customEmbeddings = await client.createEmbeddings(
+ *   'Hello world',
+ *   'openai/bge-m3:latest',
+ *   'user-123'
+ * );
+ * 
+ * // Search across knowledge base
+ * const results = await client.searchKnowledgeBase(
+ *   'machine learning algorithms',
+ *   123,
+ *   456,
+ *   { limit: 10, scoreThreshold: 0.8 }
+ * );
+ * 
+ * // Search within specific document
+ * const docResults = await client.searchInDocument(
+ *   'neural networks',
+ *   123,
+ *   456,
+ *   789, // documentId
+ *   { limit: 5 }
+ * );
+ * 
+ * // Delete a document
+ * await client.deleteDocument(789, 123, 456);
+ * 
+ * // Check service health
+ * const health = await client.healthCheck();
+ * ```
+ */

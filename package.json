@@ -28,7 +28,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "concurrently -n db,migration -c blue.bold,cyan.bold  \"wait-on tcp:5432 && drizzle-kit migrate\" \"docker compose -f ./dev/docker-compose.yml up\"",
     "db:cleanup": "./dev/clean-db.sh",
-    "test": "pnpm run test:setup && DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres_test jest --coverage && pnpm run test:teardown",
+    "test": "pnpm run test:setup && concurrently -n api,test -c blue.bold,green.bold \"wait-on tcp:5432 && API_KEY=test-api-key-123 ts-node lib/api.ts\" \"wait-on tcp:4000 && DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres_test jest --verbose --coverage\" && pnpm run test:teardown",
     "test:setup": "./scripts/setup-test.sh",
     "test:teardown": "docker compose -f ./dev/docker-compose.yml down",
     "db:setup-test": "DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres_test drizzle-kit migrate",
