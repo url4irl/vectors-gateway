@@ -16,5 +16,5 @@ export function createDocumentProcessor(userId: string) {
     userId
   );
 
-  return new DocumentProcessorClass(liteLLMClient);
+  return new DocumentProcessorClass("documents");
 }
