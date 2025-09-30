@@ -126,8 +126,8 @@ Swagger UI is available at `/docs` when service is running. OpenAPI spec: [`open
 - `PORT` (default: 4000)
 - `API_KEY` (required) - API key for authentication
 - `LITELLM_BASE_URL` (e.g., http://localhost:4000 for your LiteLLM proxy)
-- `LITELLM_API_KEY`
+- `LITELLM_API_KEY` (you must generate an API key from your LiteLLM instance)
 - `QDRANT_URL` (default: http://localhost:6333)
 - `QDRANT_API_KEY` (optional)
 - `QDRANT_COLLECTION_NAME` (default: documents)
-
+- `DEFAULT_EMBEDDING_MODEL` (default: openai/bge-m3:latest)
