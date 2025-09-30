@@ -1,10 +1,13 @@
 import request from "supertest";
 import { createApp } from "../lib/app";
 import { testDb } from "./test-db";
+import { getConfig } from "../lib/config";
+
+const { API_KEY } = getConfig();
 
 describe("Vectors Gateway E2E Tests", () => {
   let app: any;
-  const testApiKey = "test-api-key-123";
+  const testApiKey = API_KEY;
 
   beforeAll(async () => {
     // Setup test database
@@ -123,10 +126,10 @@ describe("Vectors Gateway E2E Tests", () => {
         .post("/v1/retrieval/search")
         .set("x-api-key", testApiKey)
         .set("x-user-id", "1")
-        .send({ 
-          query: "test query", 
+        .send({
+          query: "test query",
           knowledgeBaseId: 123,
-          documentId: 456  // Optional documentId
+          documentId: 456, // Optional documentId
         });
 
       // If LiteLLM is not available, expect 500 error
@@ -145,9 +148,9 @@ describe("Vectors Gateway E2E Tests", () => {
         .post("/v1/retrieval/search")
         .set("x-api-key", testApiKey)
         .set("x-user-id", "1")
-        .send({ 
-          query: "test query", 
-          knowledgeBaseId: 123
+        .send({
+          query: "test query",
+          knowledgeBaseId: 123,
           // No documentId - should search across entire knowledge base
         });
 
@@ -168,10 +171,10 @@ describe("Vectors Gateway E2E Tests", () => {
         .post("/v1/retrieval/search")
         .set("x-api-key", testApiKey)
         .set("x-user-id", "1")
-        .send({ 
-          query: "test query", 
+        .send({
+          query: "test query",
           knowledgeBaseId: 123,
-          documentId: "456"  // String documentId
+          documentId: "456", // String documentId
         });
 
       // Test with number documentId
@@ -179,10 +182,10 @@ describe("Vectors Gateway E2E Tests", () => {
         .post("/v1/retrieval/search")
         .set("x-api-key", testApiKey)
         .set("x-user-id", "1")
-        .send({ 
-          query: "test query", 
+        .send({
+          query: "test query",
           knowledgeBaseId: 123,
-          documentId: 789  // Number documentId
+          documentId: 789, // Number documentId
         });
 
       // Both should work (or fail with 500 if LiteLLM unavailable)
@@ -196,10 +199,10 @@ describe("Vectors Gateway E2E Tests", () => {
         .post("/v1/retrieval/search")
         .set("x-api-key", testApiKey)
         .set("x-user-id", "1")
-        .send({ 
-          query: "test query", 
+        .send({
+          query: "test query",
           knowledgeBaseId: 123,
-          documentId: "invalid"  // Invalid documentId
+          documentId: "invalid", // Invalid documentId
         });
 
       // Should still work as documentId is optional and gets converted to Number
@@ -250,7 +253,7 @@ describe("Vectors Gateway E2E Tests", () => {
 
       // Should return 200 or 500 depending on Qdrant availability
       expect([200, 500]).toContain(res.status);
-      
+
       if (res.status === 200) {
         expect(res.body.message).toMatch(/Document successfully removed/);
         expect(res.body.documentId).toBe(123);

@@ -1,6 +1,6 @@
 import { qdrantCient } from "../clients/qdrant";
+import { getConfig } from "../config";
 import { VectorizationResult } from "./vectorization";
-import { getEmbeddingModel } from "./embeddings";
 
 export interface QdrantPoint {
   id: string;
@@ -30,7 +30,10 @@ export class QdrantService {
 
   constructor(collectionName: string = "documents", vectorSize: number = 1024) {
     // Include embedding model name in collection name to ensure model-specific collections
-    const embeddingModel = getEmbeddingModel().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const embeddingModel = getConfig().DEFAULT_EMBEDDING_MODEL.replace(
+      /[^a-zA-Z0-9_-]/g,
+      "_"
+    );
     this.collectionName = `${collectionName}_${embeddingModel}`;
     this.vectorSize = vectorSize;
   }
@@ -59,7 +62,11 @@ export class QdrantService {
       }
     } catch (error) {
       console.error("Error initializing Qdrant collection:", error);
-      throw new Error(`Failed to initialize Qdrant collection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to initialize Qdrant collection: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -72,30 +79,38 @@ export class QdrantService {
     try {
       await this.initializeCollection();
 
-      const points: QdrantPoint[] = vectorizationResult.chunks.map((chunk, index) => ({
-        id: chunk.id,
-        vector: vectorizationResult.embeddings[index],
-        payload: {
-          documentId: chunk.metadata.documentId,
-          knowledgeBaseId: chunk.metadata.knowledgeBaseId,
-          userId: chunk.metadata.userId,
-          chunkIndex: chunk.metadata.chunkIndex,
-          totalChunks: chunk.metadata.totalChunks,
-          content: chunk.content,
-          originalContent: chunk.metadata.originalContent,
-          createdAt: new Date().toISOString(),
-        },
-      }));
+      const points: QdrantPoint[] = vectorizationResult.chunks.map(
+        (chunk, index) => ({
+          id: chunk.id,
+          vector: vectorizationResult.embeddings[index],
+          payload: {
+            documentId: chunk.metadata.documentId,
+            knowledgeBaseId: chunk.metadata.knowledgeBaseId,
+            userId: chunk.metadata.userId,
+            chunkIndex: chunk.metadata.chunkIndex,
+            totalChunks: chunk.metadata.totalChunks,
+            content: chunk.content,
+            originalContent: chunk.metadata.originalContent,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      );
 
       // Upsert points to Qdrant
       await qdrantCient.upsert(this.collectionName, {
         points,
       });
 
-      console.log(`Stored ${points.length} vectors for document ${vectorizationResult.chunks[0]?.metadata.documentId}`);
+      console.log(
+        `Stored ${points.length} vectors for document ${vectorizationResult.chunks[0]?.metadata.documentId}`
+      );
     } catch (error) {
       console.error("Error storing document vectors:", error);
-      throw new Error(`Failed to store document vectors: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to store document vectors: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -147,14 +162,21 @@ export class QdrantService {
       }));
     } catch (error) {
       console.error("Error searching similar documents:", error);
-      throw new Error(`Failed to search similar documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to search similar documents: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
   /**
    * Delete all vectors for a specific document within a knowledge base
    */
-  async deleteDocumentVectors(documentId: number, knowledgeBaseId: number): Promise<void> {
+  async deleteDocumentVectors(
+    documentId: number,
+    knowledgeBaseId: number
+  ): Promise<void> {
     try {
       await qdrantCient.delete(this.collectionName, {
         filter: {
@@ -171,10 +193,16 @@ export class QdrantService {
         },
       });
 
-      console.log(`Deleted vectors for document ${documentId} in knowledge base ${knowledgeBaseId}`);
+      console.log(
+        `Deleted vectors for document ${documentId} in knowledge base ${knowledgeBaseId}`
+      );
     } catch (error) {
       console.error("Error deleting document vectors:", error);
-      throw new Error(`Failed to delete document vectors: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to delete document vectors: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -197,7 +225,11 @@ export class QdrantService {
       console.log(`Deleted vectors for knowledge base ${knowledgeBaseId}`);
     } catch (error) {
       console.error("Error deleting knowledge base vectors:", error);
-      throw new Error(`Failed to delete knowledge base vectors: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to delete knowledge base vectors: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -209,8 +241,11 @@ export class QdrantService {
       return await qdrantCient.getCollection(this.collectionName);
     } catch (error) {
       console.error("Error getting collection info:", error);
-      throw new Error(`Failed to get collection info: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to get collection info: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 }
-

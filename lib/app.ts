@@ -5,10 +5,14 @@ import type { Application } from "express";
 import { LiteLLMClient } from "./ai/ai-gateway/litellm-client";
 import { QdrantService } from "./ai/qdrant-service";
 import { DocumentProcessor } from "./ai/document-processor";
+import { getConfig } from "./config";
+
+const { QDRANT_COLLECTION_NAME, LITELLM_API_KEY, LITELLM_BASE_URL, API_KEY } =
+  getConfig();
 
 export function createApp(enableSwagger: boolean = true): Application {
   const app = express();
-  const defaultCollection = process.env.QDRANT_COLLECTION_NAME || "documents";
+  const defaultCollection = QDRANT_COLLECTION_NAME;
 
   app.use(express.json());
 
@@ -19,19 +23,24 @@ export function createApp(enableSwagger: boolean = true): Application {
       return next();
     }
 
-    const apiKey = req.header("x-api-key") || req.header("authorization")?.replace("Bearer ", "");
-    
+    const apiKey =
+      req.header("x-api-key") ||
+      req.header("authorization")?.replace("Bearer ", "");
+
     if (!apiKey) {
       return res.status(401).json({
-        error: { message: "API key is required. Provide it via 'x-api-key' header or 'Authorization: Bearer <key>' header" }
+        error: {
+          message:
+            "API key is required. Provide it via 'x-api-key' header or 'Authorization: Bearer <key>' header",
+        },
       });
     }
 
     // Validate API key (you can enhance this with a database lookup)
-    const validApiKey = process.env.API_KEY;
+    const validApiKey = API_KEY;
     if (validApiKey && apiKey !== validApiKey) {
       return res.status(401).json({
-        error: { message: "Invalid API key" }
+        error: { message: "Invalid API key" },
       });
     }
 
@@ -58,13 +67,13 @@ export function createApp(enableSwagger: boolean = true): Application {
     res.json({
       message: "Vectors Gateway is running",
       documentation: "http://localhost:4000/docs",
-        apiInfo: {
-          endpoints: {
-            embeddings: "POST /v1/embeddings",
-            retrieval: "POST /v1/retrieval/search",
-            documents: "DELETE /v1/documents/:documentId",
-          },
+      apiInfo: {
+        endpoints: {
+          embeddings: "POST /v1/embeddings",
+          retrieval: "POST /v1/retrieval/search",
+          documents: "DELETE /v1/documents/:documentId",
         },
+      },
     });
   });
 
@@ -81,27 +90,23 @@ export function createApp(enableSwagger: boolean = true): Application {
         input === undefined ||
         (typeof input !== "string" && !Array.isArray(input))
       ) {
-        return res
-          .status(400)
-          .json({
-            error: { message: '"input" must be a string or array of strings' },
-          });
+        return res.status(400).json({
+          error: { message: '"input" must be a string or array of strings' },
+        });
       }
 
       const userIdHeader = req.header("x-user-id") || user;
       if (!userIdHeader) {
-        return res
-          .status(400)
-          .json({
-            error: {
-              message: '"userId" is required (body or x-user-id header)',
-            },
-          });
+        return res.status(400).json({
+          error: {
+            message: '"userId" is required (body or x-user-id header)',
+          },
+        });
       }
 
       const client = new LiteLLMClient(
-        process.env.LITELLM_BASE_URL!,
-        process.env.LITELLM_API_KEY!,
+        LITELLM_BASE_URL,
+        LITELLM_API_KEY,
         String(userIdHeader)
       );
 
@@ -121,19 +126,23 @@ export function createApp(enableSwagger: boolean = true): Application {
         usage: { prompt_tokens: 0, total_tokens: 0 },
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          error: { message: (error as any)?.message || "Internal error" },
-        });
+      return res.status(500).json({
+        error: { message: (error as any)?.message || "Internal error" },
+      });
     }
   });
 
   // Retrieval endpoint (semantic search over Qdrant)
   app.post("/v1/retrieval/search", async (req, res) => {
     try {
-      const { query, userId, knowledgeBaseId, documentId, limit, score_threshold } =
-        req.body || {};
+      const {
+        query,
+        userId,
+        knowledgeBaseId,
+        documentId,
+        limit,
+        score_threshold,
+      } = req.body || {};
       if (!query || typeof query !== "string") {
         return res
           .status(400)
@@ -141,27 +150,23 @@ export function createApp(enableSwagger: boolean = true): Application {
       }
       const resolvedUserId = userId ?? req.header("x-user-id");
       if (!resolvedUserId) {
-        return res
-          .status(400)
-          .json({
-            error: {
-              message: '"userId" is required (body or x-user-id header)',
-            },
-          });
+        return res.status(400).json({
+          error: {
+            message: '"userId" is required (body or x-user-id header)',
+          },
+        });
       }
       if (knowledgeBaseId === undefined || knowledgeBaseId === null) {
-        return res
-          .status(400)
-          .json({
-            error: {
-              message: '"knowledgeBaseId" is required',
-            },
-          });
+        return res.status(400).json({
+          error: {
+            message: '"knowledgeBaseId" is required',
+          },
+        });
       }
 
       const client = new LiteLLMClient(
-        process.env.LITELLM_BASE_URL!,
-        process.env.LITELLM_API_KEY!,
+        LITELLM_BASE_URL,
+        LITELLM_API_KEY,
         String(resolvedUserId)
       );
       const [queryVector] = await client.getEmbeddings([query]);
@@ -185,11 +190,9 @@ export function createApp(enableSwagger: boolean = true): Application {
         })),
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          error: { message: (error as any)?.message || "Internal error" },
-        });
+      return res.status(500).json({
+        error: { message: (error as any)?.message || "Internal error" },
+      });
     }
   });
 
@@ -200,40 +203,28 @@ export function createApp(enableSwagger: boolean = true): Application {
       const { userId, knowledgeBaseId } = req.body || {};
 
       if (!userId || typeof userId !== "number") {
-        return res
-          .status(400)
-          .json({
-            error: {
-              message: '"userId" is required in request body',
-            },
-          });
+        return res.status(400).json({
+          error: {
+            message: '"userId" is required in request body',
+          },
+        });
       }
 
       if (!knowledgeBaseId || typeof knowledgeBaseId !== "number") {
-        return res
-          .status(400)
-          .json({
-            error: {
-              message: '"knowledgeBaseId" is required in request body',
-            },
-          });
+        return res.status(400).json({
+          error: {
+            message: '"knowledgeBaseId" is required in request body',
+          },
+        });
       }
 
       if (!documentId || isNaN(Number(documentId))) {
-        return res
-          .status(400)
-          .json({
-            error: {
-              message: 'Invalid documentId parameter',
-            },
-          });
+        return res.status(400).json({
+          error: {
+            message: "Invalid documentId parameter",
+          },
+        });
       }
-
-      const liteLLMClient = new LiteLLMClient(
-        process.env.LITELLM_BASE_URL!,
-        process.env.LITELLM_API_KEY!,
-        String(userId)
-      );
 
       const documentProcessor = new DocumentProcessor(defaultCollection);
       const success = await documentProcessor.deleteDocumentVectors(
@@ -242,13 +233,11 @@ export function createApp(enableSwagger: boolean = true): Application {
       );
 
       if (!success) {
-        return res
-          .status(500)
-          .json({
-            error: {
-              message: "Failed to delete document vectors",
-            },
-          });
+        return res.status(500).json({
+          error: {
+            message: "Failed to delete document vectors",
+          },
+        });
       }
 
       return res.json({
@@ -258,11 +247,9 @@ export function createApp(enableSwagger: boolean = true): Application {
         userId,
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          error: { message: (error as any)?.message || "Internal error" },
-        });
+      return res.status(500).json({
+        error: { message: (error as any)?.message || "Internal error" },
+      });
     }
   });
 

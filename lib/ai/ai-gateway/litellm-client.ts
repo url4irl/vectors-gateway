@@ -1,5 +1,5 @@
+import { getConfig } from "../../config";
 import { EmbeddingResponse } from "./types";
-import { getEmbeddingModel } from "../embeddings";
 
 export class LiteLLMClient {
   constructor(
@@ -17,7 +17,7 @@ export class LiteLLMClient {
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          model: getEmbeddingModel(),
+          model: getConfig().DEFAULT_EMBEDDING_MODEL,
           input: texts,
           tags: [`userId:${this.userId}`],
         }),
