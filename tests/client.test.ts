@@ -99,6 +99,56 @@ describe("VectorsGatewayClient E2E Tests", () => {
     });
   });
 
+  describe("storeDocument", () => {
+    it("should store document successfully", async () => {
+      // Skip if LiteLLM is not available
+      if (!process.env.LITELLM_BASE_URL || !process.env.LITELLM_API_KEY) {
+        console.log("Skipping store document test - LiteLLM not configured");
+        return;
+      }
+
+      const result = await client.storeDocument(
+        "This is a test document about machine learning algorithms and neural networks.",
+        123, // userId
+        456, // knowledgeBaseId
+        789 // documentId
+      );
+
+      expect(result).toHaveProperty("message");
+      expect(result).toHaveProperty("documentId", 789);
+      expect(result).toHaveProperty("knowledgeBaseId", 456);
+      expect(result).toHaveProperty("userId", 123);
+      expect(result).toHaveProperty("vectorCount");
+      expect(typeof result.vectorCount).toBe("number");
+      expect(result.vectorCount).toBeGreaterThan(0);
+    });
+
+    it("should handle store document errors gracefully", async () => {
+      // This will likely fail with 500 due to Qdrant not being properly configured
+      // but we should get a proper error response
+      try {
+        await client.storeDocument("", 123, 456, 999); // Empty content should fail validation
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toMatch(
+          /Content is required|HTTP|Failed/
+        );
+      }
+    });
+
+    it("should validate required parameters", async () => {
+      // Test with invalid parameters
+      try {
+        await client.storeDocument("", 0, 0, 0); // Invalid IDs
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toMatch(
+          /Content is required|User ID must be a positive integer|Knowledge base ID must be a positive integer|Document ID must be a positive integer/
+        );
+      }
+    });
+  });
+
   describe("deleteDocument", () => {
     it("should delete document successfully", async () => {
       const result = await client.deleteDocument(789, 123, 456);

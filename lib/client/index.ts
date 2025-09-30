@@ -12,6 +12,19 @@ export const RetrievalSearchRequestSchema = z.object({
   score_threshold: z.number().min(0).max(1).optional(),
 });
 
+export const StoreDocumentRequestSchema = z.object({
+  content: z.string().min(1, "Content is required"),
+  userId: z.number().int().positive("User ID must be a positive integer"),
+  knowledgeBaseId: z
+    .number()
+    .int()
+    .positive("Knowledge base ID must be a positive integer"),
+  documentId: z
+    .number()
+    .int()
+    .positive("Document ID must be a positive integer"),
+});
+
 export const DeleteDocumentRequestSchema = z.object({
   userId: z.number().int().positive("User ID must be a positive integer"),
   knowledgeBaseId: z
@@ -23,6 +36,9 @@ export const DeleteDocumentRequestSchema = z.object({
 // Type definitions
 export type RetrievalSearchRequestInput = z.infer<
   typeof RetrievalSearchRequestSchema
+>;
+export type StoreDocumentRequestInput = z.infer<
+  typeof StoreDocumentRequestSchema
 >;
 export type DeleteDocumentRequestInput = z.infer<
   typeof DeleteDocumentRequestSchema
@@ -49,6 +65,14 @@ export interface HealthCheckResponse {
       documents: string;
     };
   };
+}
+
+export interface StoreDocumentResponse {
+  message: string;
+  documentId: number;
+  knowledgeBaseId: number;
+  userId: number;
+  vectorCount: number;
 }
 
 export interface DeleteDocumentResponse {
@@ -172,6 +196,25 @@ export class VectorsGatewayClient {
   }
 
   /**
+   * Store a document in the knowledge base
+   */
+  async storeDocument(
+    content: string,
+    userId: number,
+    knowledgeBaseId: number,
+    documentId: number
+  ): Promise<StoreDocumentResponse> {
+    const data = StoreDocumentRequestSchema.parse({
+      content,
+      userId,
+      knowledgeBaseId,
+      documentId,
+    });
+
+    return this._request<StoreDocumentResponse>("POST", "/v1/documents", data);
+  }
+
+  /**
    * Delete a document and all its vectors
    */
   async deleteDocument(
@@ -215,6 +258,14 @@ export default VectorsGatewayClient;
  * import { VectorsGatewayClient } from '@url4irl/vectors-gateway';
  *
  * const client = new VectorsGatewayClient('your-api-key', 'http://your-vectors-gateway-url');
+ *
+ * // Store a document
+ * const storeResult = await client.storeDocument(
+ *   'This is a document about machine learning algorithms...',
+ *   123, // userId
+ *   456, // knowledgeBaseId
+ *   789  // documentId
+ * );
  *
  * // Search across knowledge base
  * const results = await client.searchKnowledgeBase(

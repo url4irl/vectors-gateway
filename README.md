@@ -119,12 +119,12 @@ import { VectorsGatewayClient } from '@url4irl/vectors-gateway';
 const client = new VectorsGatewayClient('your-api-key', 'http://my-vectors-gateway-url');
 
 // Store a document
-const response = await client.storeDocument({
-  content: 'Your document content here',
-  userId: 123,
-  knowledgeBaseId: 456,
-  documentId: 789
-});
+const response = await client.storeDocument(
+  'Your document content here',
+  123, // userId
+  456, // knowledgeBaseId
+  789  // documentId
+);
 
 // Search across knowledge base
 const results = await client.searchKnowledgeBase(
