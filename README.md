@@ -7,6 +7,11 @@ Embeddings and retrieval API that abstracts LiteLLM (embeddings) and Qdrant (vec
 - [Quick Start](#quick-start)
 - [API](#api)
 - [Environment Variables](#environment-variables)
+- [Database Management](#database-management)
+  - [Database Migration Lifecycle](#database-migration-lifecycle)
+    - [Production Environment](#production-environment)
+    - [Development Environment](#development-environment)
+- [Deployment](#deployment)
 
 ## Architecture
 
@@ -129,3 +134,32 @@ Swagger UI is available at `/docs` when service is running. OpenAPI spec: [`open
 - `QDRANT_API_KEY` (optional)
 - `QDRANT_COLLECTION_NAME` (default: documents)
 - `DEFAULT_EMBEDDING_MODEL` (default: openai/bge-m3:latest)
+
+## Database Management
+
+### Database Migration Lifecycle
+
+#### Production Environment
+
+Database migrations are managed using Drizzle ORM. In a production environment, migrations must be applied **manually** by accessing the running container and executing the following command within it:
+
+```bash
+pnpm drizzle migrate --config ./dist/drizzle.config.js
+```
+
+This command will apply any pending schema changes to the database. Ensure you run this command after any deployment that includes database schema modifications.
+
+#### Development Environment
+
+In development, create and apply migrations using:
+
+```bash
+pnpm run db:generate # Generates a new migration file
+pnpm run db:migrate # Applies the migration to the database
+```
+
+## Deployment
+
+When code changes are pushed to the repository, the container is rebuilt and the updated service is deployed.
+
+Contributions are always welcome ❤️
