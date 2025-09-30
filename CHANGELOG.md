@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/url4irl/vectors-gateway/compare/v1.0.1...v1.1.0) (2025-09-30)
+
+
+### Features
+
+* store documents method on js/ts client ([3b291a5](https://github.com/url4irl/vectors-gateway/commit/3b291a5f470c0019d6d0aee5a63dd06ee7a83f63))
+
 ## [1.0.1](https://github.com/url4irl/vectors-gateway/compare/v1.0.0...v1.0.1) (2025-09-30)
 
 
