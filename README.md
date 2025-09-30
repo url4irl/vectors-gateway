@@ -144,7 +144,7 @@ Swagger UI is available at `/docs` when service is running. OpenAPI spec: [`open
 Database migrations are managed using Drizzle ORM. In a production environment, migrations must be applied **manually** by accessing the running container and executing the following command within it:
 
 ```bash
-pnpm drizzle migrate --config ./dist/drizzle.config.js
+pnpm drizzle-kit migrate --config ./dist/drizzle.config.js
 ```
 
 This command will apply any pending schema changes to the database. Ensure you run this command after any deployment that includes database schema modifications.
