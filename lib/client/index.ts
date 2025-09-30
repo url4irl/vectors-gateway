@@ -11,9 +11,17 @@ export const EmbeddingsRequestSchema = z.object({
   model: z.string().min(1, "Model is required"),
   input: z.union([
     z.string().min(1, "Input must be a non-empty string"),
-    z.array(z.string().min(1, "Input array items must be non-empty strings"))
+    z.array(z.string().min(1, "Input array items must be non-empty strings")),
   ]),
   user: z.string().optional(),
+  knowledgeBaseId: z
+    .number()
+    .int()
+    .positive("Knowledge base ID must be a positive integer"),
+  documentId: z
+    .number()
+    .int()
+    .positive("Document ID must be a positive integer"),
 });
 
 export const RetrievalSearchRequestSchema = z.object({
@@ -27,13 +35,20 @@ export const RetrievalSearchRequestSchema = z.object({
 
 export const DeleteDocumentRequestSchema = z.object({
   userId: z.number().int().positive("User ID must be a positive integer"),
-  knowledgeBaseId: z.number().int().positive("Knowledge base ID must be a positive integer"),
+  knowledgeBaseId: z
+    .number()
+    .int()
+    .positive("Knowledge base ID must be a positive integer"),
 });
 
 // Type definitions
 export type EmbeddingsRequestInput = z.infer<typeof EmbeddingsRequestSchema>;
-export type RetrievalSearchRequestInput = z.infer<typeof RetrievalSearchRequestSchema>;
-export type DeleteDocumentRequestInput = z.infer<typeof DeleteDocumentRequestSchema>;
+export type RetrievalSearchRequestInput = z.infer<
+  typeof RetrievalSearchRequestSchema
+>;
+export type DeleteDocumentRequestInput = z.infer<
+  typeof DeleteDocumentRequestSchema
+>;
 
 export interface EmbeddingData {
   object: "embedding";
@@ -123,7 +138,10 @@ export class VectorsGatewayClient {
 
     if (!response.ok) {
       const error = json as ApiError;
-      throw new Error(error.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(
+        error.error?.message ||
+          `HTTP ${response.status}: ${response.statusText}`
+      );
     }
     return json as T;
   }
@@ -134,12 +152,16 @@ export class VectorsGatewayClient {
   async createEmbeddings(
     input: string | string[],
     model: string = "openai/bge-m3:latest",
-    userId: string = "default-user"
+    userId: string = "default-user",
+    knowledgeBaseId: number,
+    documentId: number
   ): Promise<EmbeddingsResponse> {
     const data = EmbeddingsRequestSchema.parse({
       model,
       input,
       user: userId,
+      knowledgeBaseId,
+      documentId,
     });
 
     return this._request<EmbeddingsResponse>("POST", "/v1/embeddings", data, {
@@ -169,7 +191,11 @@ export class VectorsGatewayClient {
       score_threshold: options.scoreThreshold,
     });
 
-    return this._request<RetrievalSearchResponse>("POST", "/v1/retrieval/search", data);
+    return this._request<RetrievalSearchResponse>(
+      "POST",
+      "/v1/retrieval/search",
+      data
+    );
   }
 
   /**
@@ -245,12 +271,12 @@ export default VectorsGatewayClient;
 
 /**
  * Example usage:
- * 
+ *
  * ```typescript
  * import { VectorsGatewayClient } from './lib/client';
- * 
+ *
  * const client = new VectorsGatewayClient('your-api-key');
- * 
+ *
  * // Create embeddings
  * const embeddings = await client.createEmbeddings('Hello world');
  * // Or with custom model and user
@@ -259,7 +285,7 @@ export default VectorsGatewayClient;
  *   'openai/bge-m3:latest',
  *   'user-123'
  * );
- * 
+ *
  * // Search across knowledge base
  * const results = await client.searchKnowledgeBase(
  *   'machine learning algorithms',
@@ -267,7 +293,7 @@ export default VectorsGatewayClient;
  *   456,
  *   { limit: 10, scoreThreshold: 0.8 }
  * );
- * 
+ *
  * // Search within specific document
  * const docResults = await client.searchInDocument(
  *   'neural networks',
@@ -276,10 +302,10 @@ export default VectorsGatewayClient;
  *   789, // documentId
  *   { limit: 5 }
  * );
- * 
+ *
  * // Delete a document
  * await client.deleteDocument(789, 123, 456);
- * 
+ *
  * // Check service health
  * const health = await client.healthCheck();
  * ```

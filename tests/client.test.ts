@@ -29,7 +29,13 @@ describe("VectorsGatewayClient E2E Tests", () => {
         return;
       }
 
-      const result = await client.createEmbeddings("hello world");
+      const result = await client.createEmbeddings(
+        "hello world",
+        "openai/bge-m3:latest",
+        "user-123",
+        123,
+        456
+      );
 
       expect(result).toHaveProperty("object", "list");
       expect(result).toHaveProperty("data");
@@ -52,7 +58,9 @@ describe("VectorsGatewayClient E2E Tests", () => {
       const result = await client.createEmbeddings(
         ["hello", "world"],
         "openai/bge-m3:latest",
-        "user-123"
+        "user-123",
+        123,
+        456
       );
 
       expect(result).toHaveProperty("object", "list");
@@ -65,7 +73,15 @@ describe("VectorsGatewayClient E2E Tests", () => {
     });
 
     it("should handle validation errors", async () => {
-      await expect(client.createEmbeddings("")).rejects.toThrow("Input must be a non-empty string");
+      await expect(
+        client.createEmbeddings(
+          "",
+          "openai/bge-m3:latest",
+          "user-123",
+          123,
+          456
+        )
+      ).rejects.toThrow("Input must be a non-empty string");
     });
   });
 
@@ -134,12 +150,9 @@ describe("VectorsGatewayClient E2E Tests", () => {
         return;
       }
 
-      const result = await client.searchKnowledgeBase(
-        "algorithms",
-        123,
-        456,
-        { scoreThreshold: 0.7 }
-      );
+      const result = await client.searchKnowledgeBase("algorithms", 123, 456, {
+        scoreThreshold: 0.7,
+      });
 
       expect(result).toHaveProperty("query", "algorithms");
       expect(result).toHaveProperty("matches");

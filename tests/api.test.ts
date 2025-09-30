@@ -54,13 +54,42 @@ describe("Vectors Gateway E2E Tests", () => {
       expect(res.body.error.message).toMatch(/userId.*required/);
     });
 
+    it("should require knowledgeBaseId", async () => {
+      const res = await request(app)
+        .post("/v1/embeddings")
+        .set("x-api-key", testApiKey)
+        .set("x-user-id", "123")
+        .send({ model: "openai/bge-m3:latest", input: ["hello world"] })
+        .expect(400);
+      expect(res.body.error.message).toMatch(/knowledgeBaseId.*required/);
+    });
+
+    it("should require documentId", async () => {
+      const res = await request(app)
+        .post("/v1/embeddings")
+        .set("x-api-key", testApiKey)
+        .set("x-user-id", "123")
+        .send({
+          model: "openai/bge-m3:latest",
+          input: ["hello world"],
+          knowledgeBaseId: 123,
+        })
+        .expect(400);
+      expect(res.body.error.message).toMatch(/documentId.*required/);
+    });
+
     it("should return embeddings list shape when LiteLLM env is set", async () => {
       if (!process.env.LITELLM_BASE_URL || !process.env.LITELLM_API_KEY) return;
       const res = await request(app)
         .post("/v1/embeddings")
         .set("x-api-key", testApiKey)
         .set("x-user-id", "123")
-        .send({ model: "openai/bge-m3:latest", input: ["hello world"] });
+        .send({
+          model: "openai/bge-m3:latest",
+          input: ["hello world"],
+          knowledgeBaseId: 123,
+          documentId: 456,
+        });
 
       // If LiteLLM is not available, expect 500 error
       if (res.status === 500) {

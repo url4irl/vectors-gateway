@@ -80,7 +80,8 @@ export function createApp(enableSwagger: boolean = true): Application {
   // Embeddings endpoint (LiteLLM/OpenAI compatible)
   app.post("/v1/embeddings", async (req, res) => {
     try {
-      const { model, input, user } = req.body || {};
+      const { model, input, user, knowledgeBaseId, documentId } =
+        req.body || {};
       if (!model || typeof model !== "string") {
         return res
           .status(400)
@@ -100,6 +101,22 @@ export function createApp(enableSwagger: boolean = true): Application {
         return res.status(400).json({
           error: {
             message: '"userId" is required (body or x-user-id header)',
+          },
+        });
+      }
+
+      if (knowledgeBaseId === undefined || knowledgeBaseId === null) {
+        return res.status(400).json({
+          error: {
+            message: '"knowledgeBaseId" is required',
+          },
+        });
+      }
+
+      if (documentId === undefined || documentId === null) {
+        return res.status(400).json({
+          error: {
+            message: '"documentId" is required',
           },
         });
       }

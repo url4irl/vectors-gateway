@@ -55,11 +55,36 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "model": { "type": "string", "example": "openai/bge-m3:latest" },
-                  "input": { "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ] },
-                  "user": { "type": "string", "description": "User ID for tracking and data isolation" }
+                  "model": {
+                    "type": "string",
+                    "example": "openai/bge-m3:latest"
+                  },
+                  "input": {
+                    "oneOf": [
+                      { "type": "string" },
+                      { "type": "array", "items": { "type": "string" } }
+                    ]
+                  },
+                  "user": {
+                    "type": "string",
+                    "description": "User ID for tracking and data isolation"
+                  },
+                  "knowledgeBaseId": {
+                    "type": "integer",
+                    "description": "Knowledge base ID for data isolation"
+                  },
+                  "documentId": {
+                    "type": "integer",
+                    "description": "Document ID for tracking embeddings within a specific document"
+                  }
                 },
-                "required": ["model", "input", "user"]
+                "required": [
+                  "model",
+                  "input",
+                  "user",
+                  "knowledgeBaseId",
+                  "documentId"
+                ]
               }
             }
           }
@@ -78,9 +103,15 @@
                       "items": {
                         "type": "object",
                         "properties": {
-                          "object": { "type": "string", "example": "embedding" },
+                          "object": {
+                            "type": "string",
+                            "example": "embedding"
+                          },
                           "index": { "type": "integer" },
-                          "embedding": { "type": "array", "items": { "type": "number" } }
+                          "embedding": {
+                            "type": "array",
+                            "items": { "type": "number" }
+                          }
                         }
                       }
                     },
@@ -181,11 +212,28 @@
                 "type": "object",
                 "properties": {
                   "query": { "type": "string", "description": "Search query" },
-                  "userId": { "type": "integer", "description": "User ID for tracking and data isolation" },
-                  "knowledgeBaseId": { "type": "integer", "description": "Knowledge base ID for data isolation" },
-                  "documentId": { "type": "integer", "description": "Optional document ID to search within a specific document" },
-                  "limit": { "type": "integer", "default": 10, "description": "Maximum number of results" },
-                  "score_threshold": { "type": "number", "default": 0.7, "description": "Minimum similarity score" }
+                  "userId": {
+                    "type": "integer",
+                    "description": "User ID for tracking and data isolation"
+                  },
+                  "knowledgeBaseId": {
+                    "type": "integer",
+                    "description": "Knowledge base ID for data isolation"
+                  },
+                  "documentId": {
+                    "type": "integer",
+                    "description": "Optional document ID to search within a specific document"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Maximum number of results"
+                  },
+                  "score_threshold": {
+                    "type": "number",
+                    "default": 0.7,
+                    "description": "Minimum similarity score"
+                  }
                 },
                 "required": ["query", "userId", "knowledgeBaseId"]
               }
@@ -309,8 +357,14 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "userId": { "type": "integer", "description": "User ID for tracking and data isolation" },
-                  "knowledgeBaseId": { "type": "integer", "description": "Knowledge base ID for data isolation" }
+                  "userId": {
+                    "type": "integer",
+                    "description": "User ID for tracking and data isolation"
+                  },
+                  "knowledgeBaseId": {
+                    "type": "integer",
+                    "description": "Knowledge base ID for data isolation"
+                  }
                 },
                 "required": ["userId", "knowledgeBaseId"]
               }
@@ -325,7 +379,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": { "type": "string", "example": "Document successfully removed" },
+                    "message": {
+                      "type": "string",
+                      "example": "Document successfully removed"
+                    },
                     "documentId": { "type": "integer" },
                     "knowledgeBaseId": { "type": "integer" },
                     "userId": { "type": "integer" }
