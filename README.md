@@ -25,13 +25,11 @@ graph TB
         
         subgraph "AI Layer"
             Embeddings[Embeddings Service]
-            Vectorization[Document Vectorizer]
             QdrantService[Qdrant Service]
             DocumentProcessor[Document Processor]
         end
         
         subgraph "Data Layer"
-            Database[(Database Layer)]
             Metadata[Vector Metadata]
         end
     end
@@ -85,8 +83,8 @@ graph TB
     classDef api fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px
     
-    class Embeddings,Vectorization,QdrantService,DocumentProcessor service
-    class Qdrant,PostgreSQL,Database,Metadata database
+    class Embeddings,QdrantService,DocumentProcessor service
+    class Qdrant,PostgreSQL,Metadata database
     class EmbeddingsAPI,RetrievalAPI,DocumentsAPI,HealthAPI api
     class Client,LiteLLM external
 ```

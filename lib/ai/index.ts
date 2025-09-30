@@ -1,5 +1,4 @@
 // AI utilities and services
-export { DocumentVectorizer } from "./vectorization";
 export { QdrantService } from "./qdrant-service";
 export { DocumentProcessor } from "./document-processor";
 export { LiteLLMClient } from "./ai-gateway/litellm-client";
