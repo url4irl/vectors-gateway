@@ -1,5 +1,5 @@
 export interface ChunkedDocument {
-  id: string;
+  id: string | number;
   content: string;
   metadata: {
     documentId: number;

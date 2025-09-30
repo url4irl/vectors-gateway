@@ -29,179 +29,12 @@
         }
       }
     },
-    "/v1/embeddings": {
-      "post": {
-        "summary": "Create embeddings (LiteLLM/OpenAI-compatible)",
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-api-key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "API key for authentication"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "model": {
-                    "type": "string",
-                    "example": "openai/bge-m3:latest"
-                  },
-                  "input": {
-                    "oneOf": [
-                      { "type": "string" },
-                      { "type": "array", "items": { "type": "string" } }
-                    ]
-                  },
-                  "user": {
-                    "type": "string",
-                    "description": "User ID for tracking and data isolation"
-                  },
-                  "knowledgeBaseId": {
-                    "type": "integer",
-                    "description": "Knowledge base ID for data isolation"
-                  },
-                  "documentId": {
-                    "type": "integer",
-                    "description": "Document ID for tracking embeddings within a specific document"
-                  }
-                },
-                "required": [
-                  "model",
-                  "input",
-                  "user",
-                  "knowledgeBaseId",
-                  "documentId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Embedding list",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "object": { "type": "string", "example": "list" },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "object": {
-                            "type": "string",
-                            "example": "embedding"
-                          },
-                          "index": { "type": "integer" },
-                          "embedding": {
-                            "type": "array",
-                            "items": { "type": "number" }
-                          }
-                        }
-                      }
-                    },
-                    "model": { "type": "string" },
-                    "usage": {
-                      "type": "object",
-                      "properties": {
-                        "prompt_tokens": { "type": "integer" },
-                        "total_tokens": { "type": "integer" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - missing required fields",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "message": { "type": "string" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized - missing or invalid API key",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "message": { "type": "string" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "message": { "type": "string" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/retrieval/search": {
       "post": {
         "summary": "Semantic search using Qdrant",
         "security": [
           {
             "ApiKeyAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "x-api-key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "API key for authentication"
           }
         ],
         "requestBody": {
@@ -322,6 +155,129 @@
         }
       }
     },
+    "/v1/documents": {
+      "post": {
+        "summary": "Ingest and store a document in the knowledge base",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "Document content to process and store"
+                  },
+                  "userId": {
+                    "type": "integer",
+                    "description": "User ID for tracking and data isolation"
+                  },
+                  "knowledgeBaseId": {
+                    "type": "integer",
+                    "description": "Knowledge base ID for data isolation"
+                  },
+                  "documentId": {
+                    "type": "integer",
+                    "description": "Document ID for tracking the document"
+                  }
+                },
+                "required": [
+                  "content",
+                  "userId",
+                  "knowledgeBaseId",
+                  "documentId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document successfully processed and stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Document successfully processed and stored"
+                    },
+                    "documentId": { "type": "integer" },
+                    "knowledgeBaseId": { "type": "integer" },
+                    "userId": { "type": "integer" },
+                    "vectorCount": {
+                      "type": "integer",
+                      "description": "Number of vectors created for this document"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/documents/{documentId}": {
       "delete": {
         "summary": "Remove a document from a knowledge base",
@@ -331,15 +287,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "x-api-key",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "API key for authentication"
-          },
           {
             "name": "documentId",
             "in": "path",
@@ -455,7 +402,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "API key for authentication. Can also be provided via Authorization header as 'Bearer <key>'"
+        "description": "API key for authentication via x-api-key header"
       }
     }
   }

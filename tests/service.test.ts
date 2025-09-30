@@ -40,12 +40,12 @@ describe("Vectors Gateway Service Units", () => {
 
   it("QdrantService.searchSimilarDocuments should handle optional documentId", async () => {
     const service = new QdrantService("documents");
-    
-    // Mock query vector
-    const queryVector = [0.1, 0.2, 0.3, 0.4, 0.5];
+
+    // Mock query vector (BGE-M3 model uses 1024 dimensions)
+    const queryVector = new Array(1024).fill(0.1);
     const userId = 123;
     const knowledgeBaseId = 456;
-    
+
     try {
       // Test without documentId (knowledge base level search)
       const resultsWithoutDocId = await service.searchSimilarDocuments(
@@ -56,7 +56,7 @@ describe("Vectors Gateway Service Units", () => {
         0.7
       );
       expect(Array.isArray(resultsWithoutDocId)).toBe(true);
-      
+
       // Test with documentId (document level search)
       const resultsWithDocId = await service.searchSimilarDocuments(
         queryVector,
@@ -64,13 +64,14 @@ describe("Vectors Gateway Service Units", () => {
         knowledgeBaseId,
         10,
         0.7,
-        789  // documentId
+        789 // documentId
       );
       expect(Array.isArray(resultsWithDocId)).toBe(true);
-      
     } catch (error) {
       // If Qdrant is not available, expect connection error
-      expect((error as Error).message).toMatch(/Failed to search similar documents/);
+      expect((error as Error).message).toMatch(
+        /Failed to search similar documents/
+      );
     }
   });
 });

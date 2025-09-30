@@ -27,82 +27,6 @@ describe("Vectors Gateway E2E Tests", () => {
     await testDb.teardown();
   });
 
-  describe("POST /v1/embeddings", () => {
-    it("should require API key", async () => {
-      const res = await request(app)
-        .post("/v1/embeddings")
-        .send({})
-        .expect(401);
-      expect(res.body.error.message).toMatch(/API key is required/);
-    });
-
-    it("should validate missing fields", async () => {
-      const res = await request(app)
-        .post("/v1/embeddings")
-        .set("x-api-key", testApiKey)
-        .send({})
-        .expect(400);
-      expect(res.body.error.message).toMatch(/model/);
-    });
-
-    it("should require userId", async () => {
-      const res = await request(app)
-        .post("/v1/embeddings")
-        .set("x-api-key", testApiKey)
-        .send({ model: "openai/bge-m3:latest", input: ["hello world"] })
-        .expect(400);
-      expect(res.body.error.message).toMatch(/userId.*required/);
-    });
-
-    it("should require knowledgeBaseId", async () => {
-      const res = await request(app)
-        .post("/v1/embeddings")
-        .set("x-api-key", testApiKey)
-        .set("x-user-id", "123")
-        .send({ model: "openai/bge-m3:latest", input: ["hello world"] })
-        .expect(400);
-      expect(res.body.error.message).toMatch(/knowledgeBaseId.*required/);
-    });
-
-    it("should require documentId", async () => {
-      const res = await request(app)
-        .post("/v1/embeddings")
-        .set("x-api-key", testApiKey)
-        .set("x-user-id", "123")
-        .send({
-          model: "openai/bge-m3:latest",
-          input: ["hello world"],
-          knowledgeBaseId: 123,
-        })
-        .expect(400);
-      expect(res.body.error.message).toMatch(/documentId.*required/);
-    });
-
-    it("should return embeddings list shape when LiteLLM env is set", async () => {
-      if (!process.env.LITELLM_BASE_URL || !process.env.LITELLM_API_KEY) return;
-      const res = await request(app)
-        .post("/v1/embeddings")
-        .set("x-api-key", testApiKey)
-        .set("x-user-id", "123")
-        .send({
-          model: "openai/bge-m3:latest",
-          input: ["hello world"],
-          knowledgeBaseId: 123,
-          documentId: 456,
-        });
-
-      // If LiteLLM is not available, expect 500 error
-      if (res.status === 500) {
-        expect(res.body.error.message).toMatch(/HTTP error|Internal error/);
-        return;
-      }
-
-      expect(res.status).toBe(200);
-      expect(res.body.object).toBe("list");
-      expect(Array.isArray(res.body.data)).toBe(true);
-    });
-  });
-
   describe("POST /v1/retrieval/search", () => {
     it("should require API key", async () => {
       const res = await request(app)
@@ -300,9 +224,9 @@ describe("Vectors Gateway E2E Tests", () => {
         documentation: "http://localhost:4000/docs",
         apiInfo: {
           endpoints: {
-            embeddings: "POST /v1/embeddings",
             retrieval: "POST /v1/retrieval/search",
-            documents: "DELETE /v1/documents/:documentId",
+            documents:
+              "POST /v1/documents (ingest), DELETE /v1/documents/:documentId (remove)",
           },
         },
       });

@@ -7,22 +7,6 @@ const BASE_URL =
     : "https://vectors-gateway.url4irl.com";
 
 // Zod Schemas
-export const EmbeddingsRequestSchema = z.object({
-  model: z.string().min(1, "Model is required"),
-  input: z.union([
-    z.string().min(1, "Input must be a non-empty string"),
-    z.array(z.string().min(1, "Input array items must be non-empty strings")),
-  ]),
-  user: z.string().optional(),
-  knowledgeBaseId: z
-    .number()
-    .int()
-    .positive("Knowledge base ID must be a positive integer"),
-  documentId: z
-    .number()
-    .int()
-    .positive("Document ID must be a positive integer"),
-});
 
 export const RetrievalSearchRequestSchema = z.object({
   query: z.string().min(1, "Query is required"),
@@ -42,29 +26,12 @@ export const DeleteDocumentRequestSchema = z.object({
 });
 
 // Type definitions
-export type EmbeddingsRequestInput = z.infer<typeof EmbeddingsRequestSchema>;
 export type RetrievalSearchRequestInput = z.infer<
   typeof RetrievalSearchRequestSchema
 >;
 export type DeleteDocumentRequestInput = z.infer<
   typeof DeleteDocumentRequestSchema
 >;
-
-export interface EmbeddingData {
-  object: "embedding";
-  index: number;
-  embedding: number[];
-}
-
-export interface EmbeddingsResponse {
-  object: "list";
-  data: EmbeddingData[];
-  model: string;
-  usage: {
-    prompt_tokens: number;
-    total_tokens: number;
-  };
-}
 
 export interface RetrievalMatch {
   id: string;
@@ -144,29 +111,6 @@ export class VectorsGatewayClient {
       );
     }
     return json as T;
-  }
-
-  /**
-   * Create embeddings for text using LiteLLM
-   */
-  async createEmbeddings(
-    input: string | string[],
-    model: string = "openai/bge-m3:latest",
-    userId: string = "default-user",
-    knowledgeBaseId: number,
-    documentId: number
-  ): Promise<EmbeddingsResponse> {
-    const data = EmbeddingsRequestSchema.parse({
-      model,
-      input,
-      user: userId,
-      knowledgeBaseId,
-      documentId,
-    });
-
-    return this._request<EmbeddingsResponse>("POST", "/v1/embeddings", data, {
-      "x-user-id": userId,
-    });
   }
 
   /**

@@ -1,4 +1,5 @@
 import { QdrantClient } from "@qdrant/qdrant-js";
+import { Schemas } from "@qdrant/js-client-rest";
 import { getConfig } from "../config";
 
 const { QDRANT_URL, QDRANT_API_KEY } = getConfig();
@@ -46,6 +47,8 @@ class QdrantHttpClient {
       points: Array<{ id: string | number; vector: number[]; payload?: P }>;
     }
   ): Promise<void> {
+    console.log({});
+
     await this.client.upsert(name, {
       points: body.points.map((point) => ({
         id: point.id,
@@ -60,7 +63,7 @@ class QdrantHttpClient {
     name: string,
     body: {
       vector: number[];
-      filter?: any;
+      filter?: Schemas["Filter"];
       limit?: number;
       with_payload?: boolean;
       score_threshold?: number;
@@ -76,7 +79,10 @@ class QdrantHttpClient {
     return result;
   }
 
-  async delete(name: string, body: { filter: any }): Promise<void> {
+  async delete(
+    name: string,
+    body: { filter: Schemas["Filter"] }
+  ): Promise<void> {
     await this.client.delete(name, {
       filter: body.filter,
       wait: true,

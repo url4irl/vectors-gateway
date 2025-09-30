@@ -75,6 +75,7 @@
     "wait-on": "^8.0.3"
   },
   "dependencies": {
+    "@qdrant/js-client-rest": "^1.15.1",
     "@qdrant/qdrant-js": "^1.15.1",
     "body-parser": "^2.2.0",
     "dotenv": "^17.2.0",

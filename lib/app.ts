@@ -69,84 +69,12 @@ export function createApp(enableSwagger: boolean = true): Application {
       documentation: "http://localhost:4000/docs",
       apiInfo: {
         endpoints: {
-          embeddings: "POST /v1/embeddings",
           retrieval: "POST /v1/retrieval/search",
-          documents: "DELETE /v1/documents/:documentId",
+          documents:
+            "POST /v1/documents (ingest), DELETE /v1/documents/:documentId (remove)",
         },
       },
     });
-  });
-
-  // Embeddings endpoint (LiteLLM/OpenAI compatible)
-  app.post("/v1/embeddings", async (req, res) => {
-    try {
-      const { model, input, user, knowledgeBaseId, documentId } =
-        req.body || {};
-      if (!model || typeof model !== "string") {
-        return res
-          .status(400)
-          .json({ error: { message: '"model" is required' } });
-      }
-      if (
-        input === undefined ||
-        (typeof input !== "string" && !Array.isArray(input))
-      ) {
-        return res.status(400).json({
-          error: { message: '"input" must be a string or array of strings' },
-        });
-      }
-
-      const userIdHeader = req.header("x-user-id") || user;
-      if (!userIdHeader) {
-        return res.status(400).json({
-          error: {
-            message: '"userId" is required (body or x-user-id header)',
-          },
-        });
-      }
-
-      if (knowledgeBaseId === undefined || knowledgeBaseId === null) {
-        return res.status(400).json({
-          error: {
-            message: '"knowledgeBaseId" is required',
-          },
-        });
-      }
-
-      if (documentId === undefined || documentId === null) {
-        return res.status(400).json({
-          error: {
-            message: '"documentId" is required',
-          },
-        });
-      }
-
-      const client = new LiteLLMClient(
-        LITELLM_BASE_URL,
-        LITELLM_API_KEY,
-        String(userIdHeader)
-      );
-
-      const inputs: string[] = Array.isArray(input) ? input : [input];
-      const embeddings = await client.getEmbeddings(inputs);
-
-      const data = embeddings.map((embedding, index) => ({
-        object: "embedding",
-        index,
-        embedding,
-      }));
-
-      return res.json({
-        object: "list",
-        data,
-        model,
-        usage: { prompt_tokens: 0, total_tokens: 0 },
-      });
-    } catch (error) {
-      return res.status(500).json({
-        error: { message: (error as any)?.message || "Internal error" },
-      });
-    }
   });
 
   // Retrieval endpoint (semantic search over Qdrant)
@@ -194,7 +122,7 @@ export function createApp(enableSwagger: boolean = true): Application {
         Number(resolvedUserId),
         Number(knowledgeBaseId),
         limit !== undefined ? Number(limit) : 10,
-        score_threshold !== undefined ? Number(score_threshold) : 0.7,
+        score_threshold !== undefined ? Number(score_threshold) : 0.5,
         documentId !== undefined ? Number(documentId) : undefined
       );
 
@@ -205,6 +133,59 @@ export function createApp(enableSwagger: boolean = true): Application {
           score: r.score,
           payload: r.payload,
         })),
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: { message: (error as any)?.message || "Internal error" },
+      });
+    }
+  });
+
+  // Document ingestion endpoint
+  app.post("/v1/documents", async (req, res) => {
+    try {
+      const { content, userId, knowledgeBaseId, documentId } = req.body || {};
+
+      if (!content || typeof content !== "string") {
+        return res.status(400).json({
+          error: { message: '"content" is required and must be a string' },
+        });
+      }
+
+      if (!userId || typeof userId !== "number") {
+        return res.status(400).json({
+          error: { message: '"userId" is required and must be a number' },
+        });
+      }
+
+      if (!knowledgeBaseId || typeof knowledgeBaseId !== "number") {
+        return res.status(400).json({
+          error: {
+            message: '"knowledgeBaseId" is required and must be a number',
+          },
+        });
+      }
+
+      if (!documentId || typeof documentId !== "number") {
+        return res.status(400).json({
+          error: { message: '"documentId" is required and must be a number' },
+        });
+      }
+
+      const documentProcessor = new DocumentProcessor(defaultCollection);
+      const result = await documentProcessor.processDocument(
+        content,
+        documentId,
+        knowledgeBaseId,
+        userId
+      );
+
+      return res.json({
+        message: "Document successfully processed and stored",
+        documentId,
+        knowledgeBaseId,
+        userId,
+        vectorCount: result.vectorCount,
       });
     } catch (error) {
       return res.status(500).json({

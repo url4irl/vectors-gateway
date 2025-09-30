@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@qdrant/js-client-rest':
+        specifier: ^1.15.1
+        version: 1.15.1(typescript@5.8.3)
       '@qdrant/qdrant-js':
         specifier: ^1.15.1
         version: 1.15.1(typescript@5.8.3)

@@ -21,70 +21,6 @@ describe("VectorsGatewayClient E2E Tests", () => {
     });
   });
 
-  describe("createEmbeddings", () => {
-    it("should create embeddings with string input", async () => {
-      // Skip if LiteLLM is not available
-      if (!process.env.LITELLM_BASE_URL || !process.env.LITELLM_API_KEY) {
-        console.log("Skipping embeddings test - LiteLLM not configured");
-        return;
-      }
-
-      const result = await client.createEmbeddings(
-        "hello world",
-        "openai/bge-m3:latest",
-        "user-123",
-        123,
-        456
-      );
-
-      expect(result).toHaveProperty("object", "list");
-      expect(result).toHaveProperty("data");
-      expect(result).toHaveProperty("model");
-      expect(result).toHaveProperty("usage");
-      expect(Array.isArray(result.data)).toBe(true);
-      expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data[0]).toHaveProperty("object", "embedding");
-      expect(result.data[0]).toHaveProperty("index", 0);
-      expect(Array.isArray(result.data[0].embedding)).toBe(true);
-    });
-
-    it("should create embeddings with array input", async () => {
-      // Skip if LiteLLM is not available
-      if (!process.env.LITELLM_BASE_URL || !process.env.LITELLM_API_KEY) {
-        console.log("Skipping embeddings test - LiteLLM not configured");
-        return;
-      }
-
-      const result = await client.createEmbeddings(
-        ["hello", "world"],
-        "openai/bge-m3:latest",
-        "user-123",
-        123,
-        456
-      );
-
-      expect(result).toHaveProperty("object", "list");
-      expect(result).toHaveProperty("data");
-      expect(Array.isArray(result.data)).toBe(true);
-      expect(result.data.length).toBeGreaterThan(0);
-      expect(result.data[0]).toHaveProperty("object", "embedding");
-      expect(result.data[0]).toHaveProperty("index", 0);
-      expect(Array.isArray(result.data[0].embedding)).toBe(true);
-    });
-
-    it("should handle validation errors", async () => {
-      await expect(
-        client.createEmbeddings(
-          "",
-          "openai/bge-m3:latest",
-          "user-123",
-          123,
-          456
-        )
-      ).rejects.toThrow("Input must be a non-empty string");
-    });
-  });
-
   describe("searchDocuments", () => {
     it("should search documents with all parameters", async () => {
       // Skip if LiteLLM is not available
@@ -190,7 +126,6 @@ describe("VectorsGatewayClient E2E Tests", () => {
       expect(result).toHaveProperty("documentation");
       expect(result).toHaveProperty("apiInfo");
       expect(result.apiInfo).toHaveProperty("endpoints");
-      expect(result.apiInfo.endpoints).toHaveProperty("embeddings");
       expect(result.apiInfo.endpoints).toHaveProperty("retrieval");
       expect(result.apiInfo.endpoints).toHaveProperty("documents");
     });

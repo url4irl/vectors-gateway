@@ -3,7 +3,7 @@ import { getConfig } from "../config";
 import { VectorizationResult } from "./vectorization";
 
 export interface QdrantPoint {
-  id: string;
+  id: string | number;
   vector: number[];
   payload: {
     documentId: number;
@@ -80,20 +80,32 @@ export class QdrantService {
       await this.initializeCollection();
 
       const points: QdrantPoint[] = vectorizationResult.chunks.map(
-        (chunk, index) => ({
-          id: chunk.id,
-          vector: vectorizationResult.embeddings[index],
-          payload: {
-            documentId: chunk.metadata.documentId,
-            knowledgeBaseId: chunk.metadata.knowledgeBaseId,
-            userId: chunk.metadata.userId,
-            chunkIndex: chunk.metadata.chunkIndex,
-            totalChunks: chunk.metadata.totalChunks,
-            content: chunk.content,
-            originalContent: chunk.metadata.originalContent,
-            createdAt: new Date().toISOString(),
-          },
-        })
+        (chunk, index) => {
+          const vector = vectorizationResult.embeddings[index];
+
+          // Validate that we have a valid vector for this chunk
+          if (!vector || !Array.isArray(vector) || vector.length === 0) {
+            throw new Error(
+              `Missing or invalid vector for chunk ${index} (id: ${chunk.id}): ` +
+                `expected array, got ${typeof vector}`
+            );
+          }
+
+          return {
+            id: chunk.id,
+            vector: vector,
+            payload: {
+              documentId: chunk.metadata.documentId,
+              knowledgeBaseId: chunk.metadata.knowledgeBaseId,
+              userId: chunk.metadata.userId,
+              chunkIndex: chunk.metadata.chunkIndex,
+              totalChunks: chunk.metadata.totalChunks,
+              content: chunk.content,
+              originalContent: chunk.metadata.originalContent,
+              createdAt: new Date().toISOString(),
+            },
+          };
+        }
       );
 
       // Upsert points to Qdrant
@@ -126,26 +138,29 @@ export class QdrantService {
     documentId?: number
   ): Promise<SearchResult[]> {
     try {
-      const filter: any = {
-        must: [
-          {
-            key: "userId",
-            match: { value: userId },
-          },
-          {
-            key: "knowledgeBaseId",
-            match: { value: knowledgeBaseId },
-          },
-        ],
-      };
+      // Build filter conditions
+      const mustConditions = [
+        {
+          key: "userId",
+          match: { value: userId },
+        },
+        {
+          key: "knowledgeBaseId",
+          match: { value: knowledgeBaseId },
+        },
+      ];
 
       // Add documentId filter if provided
       if (documentId !== undefined) {
-        filter.must.push({
+        mustConditions.push({
           key: "documentId",
           match: { value: documentId },
         });
       }
+
+      const filter = {
+        must: mustConditions,
+      };
 
       const searchResult = await qdrantCient.search(this.collectionName, {
         vector: queryVector,
@@ -178,19 +193,21 @@ export class QdrantService {
     knowledgeBaseId: number
   ): Promise<void> {
     try {
+      const deleteFilter = {
+        must: [
+          {
+            key: "documentId",
+            match: { value: documentId },
+          },
+          {
+            key: "knowledgeBaseId",
+            match: { value: knowledgeBaseId },
+          },
+        ],
+      };
+
       await qdrantCient.delete(this.collectionName, {
-        filter: {
-          must: [
-            {
-              key: "documentId",
-              match: { value: documentId },
-            },
-            {
-              key: "knowledgeBaseId",
-              match: { value: knowledgeBaseId },
-            },
-          ],
-        },
+        filter: deleteFilter,
       });
 
       console.log(

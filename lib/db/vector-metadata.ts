@@ -21,6 +21,32 @@ export async function createDocumentVectorMetadata(
 }
 
 /**
+ * Upsert vector metadata for a document (create or update)
+ */
+export async function upsertDocumentVectorMetadata(
+  data: NewDocumentVectorMetadata
+): Promise<DocumentVectorMetadata> {
+  const [metadata] = await db
+    .insert(documentVectorMetadata)
+    .values(data)
+    .onConflictDoUpdate({
+      target: [
+        documentVectorMetadata.documentId,
+        documentVectorMetadata.knowledgeBaseId,
+      ],
+      set: {
+        vectorCount: data.vectorCount,
+        isVectorized: data.isVectorized,
+        vectorizedAt: data.vectorizedAt,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  return metadata;
+}
+
+/**
  * Get vector metadata for a document
  */
 export async function getDocumentVectorMetadata(
@@ -39,7 +65,12 @@ export async function getDocumentVectorMetadata(
  */
 export async function updateDocumentVectorMetadata(
   documentId: number,
-  data: Partial<Omit<NewDocumentVectorMetadata, "id" | "documentId" | "knowledgeBaseId" | "userId" | "createdAt">>
+  data: Partial<
+    Omit<
+      NewDocumentVectorMetadata,
+      "id" | "documentId" | "knowledgeBaseId" | "userId" | "createdAt"
+    >
+  >
 ): Promise<DocumentVectorMetadata | null> {
   const [metadata] = await db
     .update(documentVectorMetadata)
@@ -126,4 +157,3 @@ export async function deleteDocumentVectorMetadata(
 
   return (result as any)?.rowCount ? (result as any).rowCount > 0 : false;
 }
-

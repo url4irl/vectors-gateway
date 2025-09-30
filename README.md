@@ -41,9 +41,8 @@ graph TB
     
     %% API Endpoints
     subgraph "API Endpoints"
-        EmbeddingsAPI[POST /v1/embeddings]
         RetrievalAPI[POST /v1/retrieval/search]
-        DocumentsAPI[DELETE /v1/documents/:id]
+        DocumentsAPI[POST /v1/documents<br/>DELETE /v1/documents/:id]
         HealthAPI[GET /]
     end
     
@@ -52,31 +51,26 @@ graph TB
     Auth --> API
     
     %% API Routing
-    API --> EmbeddingsAPI
     API --> RetrievalAPI
     API --> DocumentsAPI
     API --> HealthAPI
     
-    %% Embeddings Flow (Direct API)
-    EmbeddingsAPI --> Embeddings
-    Embeddings --> LiteLLM
-    LiteLLM -->|Vector Embeddings| Embeddings
-    Embeddings -->|Response| Client
     
-    %% Retrieval Flow (Direct API)
+    %% Retrieval Flow (Search)
     RetrievalAPI --> Embeddings
     Embeddings --> LiteLLM
     LiteLLM -->|Query Vector| QdrantService
-    QdrantService --> Qdrant
+    QdrantService -->|Search| Qdrant
     Qdrant -->|Similar Vectors| QdrantService
     QdrantService -->|Results| Client
     
-    %% Document Management Flow (Document Processor)
-    DocumentsAPI --> DocumentProcessor
-    DocumentProcessor --> QdrantService
-    DocumentProcessor --> Metadata
-    QdrantService --> Qdrant
-    Metadata --> PostgreSQL
+    %% Document Management Flow
+    DocumentsAPI -->|Ingest| DocumentProcessor
+    DocumentsAPI -->|Delete| DocumentProcessor
+    DocumentProcessor -->|Process & Store| QdrantService
+    DocumentProcessor -->|Track Metadata| Metadata
+    QdrantService -->|Store Vectors| Qdrant
+    Metadata -->|Store Metadata| PostgreSQL
     
     %% Data Storage
     QdrantService -.->|Vector Storage| Qdrant
@@ -90,21 +84,22 @@ graph TB
     
     class Embeddings,QdrantService,DocumentProcessor service
     class Qdrant,PostgreSQL,Metadata database
-    class EmbeddingsAPI,RetrievalAPI,DocumentsAPI,HealthAPI api
+    class RetrievalAPI,DocumentsAPI,HealthAPI api
     class Client,LiteLLM external
 ```
 
 ### How It Works
 
 1. **Authentication**: All requests require an API key and user ID for security and data isolation
-2. **Embeddings API**: Direct text-to-vector conversion using LiteLLM (no document storage)
-3. **Retrieval API**: Direct semantic search using LiteLLM + Qdrant with flexible search scope:
+2. **Retrieval API**: Semantic search using LiteLLM + Qdrant with flexible search scope:
    - **Knowledge Base Level**: Search across all documents in a knowledge base
    - **Document Level**: Search within a specific document (optional `documentId` parameter)
-4. **Document Management**: Document Processor handles document deletion with proper cleanup:
+   - **Scoring**: Configurable similarity threshold (default: 0.5)
+3. **Document Management**: Full document lifecycle with proper data isolation:
+   - **Ingestion**: Process documents with chunking, embedding generation, and storage
    - **Deletion**: Removes documents and cleans up all associated data across Qdrant and PostgreSQL
-5. **Storage**: Vectors are stored in Qdrant with metadata in PostgreSQL
-6. **Data Integrity**: Document operations maintain consistency across both storage systems
+4. **Storage**: Vectors are stored in Qdrant with metadata in PostgreSQL for tracking
+5. **Data Integrity**: All operations maintain consistency across both storage systems with proper isolation by `userId`, `knowledgeBaseId`, and `documentId`
 
 ## Quick Start
 
