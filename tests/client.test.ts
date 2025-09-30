@@ -16,7 +16,10 @@ describe("VectorsGatewayClient E2E Tests", () => {
     });
 
     it("should use default base URL when not provided", () => {
-      const client = new VectorsGatewayClient("api-key");
+      const client = new VectorsGatewayClient(
+        "api-key",
+        "http://localhost:4000"
+      );
       expect(client).toBeInstanceOf(VectorsGatewayClient);
     });
   });
