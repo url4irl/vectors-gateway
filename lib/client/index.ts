@@ -1,11 +1,6 @@
 import { z } from "zod";
 import fetch, { RequestInit } from "node-fetch";
 
-const BASE_URL =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:4000"
-    : "https://vectors-gateway.url4irl.com";
-
 // Zod Schemas
 
 export const RetrievalSearchRequestSchema = z.object({
@@ -74,7 +69,7 @@ export class VectorsGatewayClient {
   private baseUrl: string;
   private apiKey: string;
 
-  constructor(apiKey: string, baseUrl: string = BASE_URL) {
+  constructor(apiKey: string, baseUrl: string) {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
   }
@@ -217,18 +212,9 @@ export default VectorsGatewayClient;
  * Example usage:
  *
  * ```typescript
- * import { VectorsGatewayClient } from './lib/client';
+ * import { VectorsGatewayClient } from '@url4irl/vectors-gateway';
  *
- * const client = new VectorsGatewayClient('your-api-key');
- *
- * // Create embeddings
- * const embeddings = await client.createEmbeddings('Hello world');
- * // Or with custom model and user
- * const customEmbeddings = await client.createEmbeddings(
- *   'Hello world',
- *   'openai/bge-m3:latest',
- *   'user-123'
- * );
+ * const client = new VectorsGatewayClient('your-api-key', 'http://your-vectors-gateway-url');
  *
  * // Search across knowledge base
  * const results = await client.searchKnowledgeBase(
