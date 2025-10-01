@@ -2,7 +2,7 @@ import express from "express";
 import swaggerUi from "swagger-ui-express";
 import { jsDocSpecs } from "./docs";
 import type { Application } from "express";
-import { LiteLLMClient } from "./ai/ai-gateway/litellm-client";
+import { LiteLLMClient } from "./ai/sdk/litellm-client";
 import { QdrantService } from "./ai/qdrant-service";
 import { DocumentProcessor } from "./ai/document-processor";
 import { getConfig } from "./config";

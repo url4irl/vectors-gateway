@@ -1,5 +1,5 @@
 import { testDb } from "./test-db";
-import { LiteLLMClient } from "../lib/ai/ai-gateway/litellm-client";
+import { LiteLLMClient } from "../lib/ai/sdk/litellm-client";
 import { QdrantService } from "../lib/ai/qdrant-service";
 
 describe("Vectors Gateway Service Units", () => {

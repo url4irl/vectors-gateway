@@ -4,7 +4,7 @@ import {
   upsertDocumentVectorMetadata,
   markDocumentAsVectorized,
 } from "../db/vector-metadata";
-import { LiteLLMClient } from "./ai-gateway/litellm-client";
+import { LiteLLMClient } from "./sdk/litellm-client";
 import { getConfig } from "../config";
 import { VectorizationResult, ChunkedDocument } from "./vectorization";
 
