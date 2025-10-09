@@ -34,6 +34,7 @@ This service is designed to be deployed alongside your main application as a com
 - **Single-tenant**: Designed for one-to-one deployment with your application
 - **Focused responsibility**: Handles only vector database operations
 - **API-driven**: Communicates with your application via REST API
+- **Intelligent Processing**: Uses semantic chunking for optimal document understanding
 
 ### Use Cases
 
@@ -41,8 +42,9 @@ This service is a good fit for applications that need to:
 
 - **RAG (Retrieval-Augmented Generation)**: Store and retrieve relevant documents to augment LLM responses
 - **Semantic Search**: Find similar content based on meaning, not just keywords
-- **Document Management**: Process and store documents with automatic chunking and embedding
+- **Document Management**: Process and store documents with intelligent semantic chunking
 - **Knowledge Bases**: Build searchable knowledge repositories for your application
+- **Large Document Processing**: Handle documents up to 50MB with semantic chunking for optimal search quality
 
 ## Deployment Pattern
 
@@ -174,7 +176,7 @@ As a Sidecar service, the Vectors Gateway operates as follows:
 1. **API Communication**: Your main application communicates with this service via REST API calls
 2. **Authentication**: All requests require an API key for security and data isolation
 3. **Document Processing**: When your app needs to store documents:
-   - Documents are automatically chunked into semantic pieces
+   - Documents are automatically chunked using **semantic chunking** for optimal content understanding
    - Each chunk is embedded through LiteLLM
    - Vectors are stored in Qdrant with metadata in PostgreSQL
 4. **Semantic Search**: When your app needs to retrieve relevant content:

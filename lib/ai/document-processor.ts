@@ -5,12 +5,14 @@ import {
   markDocumentAsVectorized,
 } from "../db/vector-metadata";
 import { LiteLLMClient } from "./sdk/litellm-client";
+import { SemanticChunkingService } from "./semantic-chunking";
 import { getConfig } from "../config";
 import { VectorizationResult, ChunkedDocument } from "./vectorization";
 
 export class DocumentProcessor {
   private qdrantService: QdrantService;
   private litellmClient: LiteLLMClient;
+  private semanticChunkingService: SemanticChunkingService;
 
   constructor(qdrantCollectionName: string = "documents") {
     this.qdrantService = new QdrantService(qdrantCollectionName);
@@ -19,6 +21,9 @@ export class DocumentProcessor {
       LITELLM_BASE_URL,
       LITELLM_API_KEY,
       "document-processor"
+    );
+    this.semanticChunkingService = new SemanticChunkingService(
+      this.litellmClient
     );
   }
 
@@ -59,29 +64,45 @@ export class DocumentProcessor {
         console.log(`No existing vectors found for document ${documentId}`);
       }
 
-      // Simple chunking strategy - split by sentences
-      const sentences = content
-        .split(/[.!?]+/)
-        .filter((s) => s.trim().length > 0);
-      const chunks: ChunkedDocument[] = sentences.map((sentence, index) => ({
-        id: documentId * 1000 + index, // Generate unique integer IDs
-        content: sentence.trim(),
-        metadata: {
-          documentId,
-          knowledgeBaseId,
-          userId,
-          chunkIndex: index,
-          totalChunks: sentences.length,
-          originalContent: content,
-        },
-      }));
+      // Use semantic chunking for better content understanding
+      const semanticChunks =
+        await this.semanticChunkingService.performSemanticChunking(
+          content,
+          1, // bufferSize
+          90 // percentileThreshold
+        );
+
+      // Convert semantic chunks to ChunkedDocument format
+      const chunks: ChunkedDocument[] = semanticChunks.map(
+        (chunkContent, index) => ({
+          id: documentId * 1000 + index,
+          content: chunkContent,
+          metadata: {
+            documentId,
+            knowledgeBaseId,
+            userId,
+            chunkIndex: index,
+            totalChunks: semanticChunks.length,
+            originalContent: content,
+          },
+        })
+      );
 
       // Generate embeddings for all chunks
       const chunkTexts = chunks.map((chunk) => chunk.content);
+      console.log(
+        `Processing ${chunkTexts.length} chunks for document ${documentId}`
+      );
 
-      console.log({ chunkTexts });
+      // Validate chunk sizes before sending to embedding service
+      const oversizedChunks = chunkTexts.filter((text) => text.length > 8000);
+      if (oversizedChunks.length > 0) {
+        console.warn(
+          `Warning: ${oversizedChunks.length} chunks exceed 8k characters and may fail with embedding service`
+        );
+      }
+
       const embeddings = await this.litellmClient.getEmbeddings(chunkTexts);
-      console.log({ embeddings });
 
       // Validate that we have embeddings for all chunks
       if (embeddings.length !== chunks.length) {

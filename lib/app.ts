@@ -14,7 +14,9 @@ export function createApp(enableSwagger: boolean = true): Application {
   const app = express();
   const defaultCollection = QDRANT_COLLECTION_NAME;
 
-  app.use(express.json());
+  // Increase body size limit for large documents (50MB)
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Key authentication middleware
   app.use((req, res, next) => {
