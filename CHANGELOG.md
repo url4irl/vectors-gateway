@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/url4irl/vectors-gateway/compare/v1.1.0...v1.2.0) (2025-10-09)
+
+
+### Features
+
+* semantic chunking ([eac69b2](https://github.com/url4irl/vectors-gateway/commit/eac69b2a6fe55e25af8aad9e35acf943dba758d6))
+
 # [1.1.0](https://github.com/url4irl/vectors-gateway/compare/v1.0.1...v1.1.0) (2025-09-30)
 
 
