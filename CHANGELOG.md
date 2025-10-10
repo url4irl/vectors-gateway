@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/url4irl/vectors-gateway/compare/v1.2.0...v1.3.0) (2025-10-10)
+
+
+### Features
+
+* langfuse integration ([f14a075](https://github.com/url4irl/vectors-gateway/commit/f14a0758ea93990176287f5adc177f266a8e6d80))
+
 # [1.2.0](https://github.com/url4irl/vectors-gateway/compare/v1.1.0...v1.2.0) (2025-10-09)
 
 
