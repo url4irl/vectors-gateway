@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/url4irl/vectors-gateway/compare/v1.3.0...v1.4.0) (2025-10-10)
+
+
+### Features
+
+* add trace entry on ts client ([cd07a6a](https://github.com/url4irl/vectors-gateway/commit/cd07a6a067b86bf537ac446e0b599d9965dd1892))
+
 # [1.3.0](https://github.com/url4irl/vectors-gateway/compare/v1.2.0...v1.3.0) (2025-10-10)
 
 
