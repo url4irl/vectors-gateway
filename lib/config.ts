@@ -14,6 +14,10 @@ export function getConfig() {
     QDRANT_COLLECTION_NAME,
     DEFAULT_EMBEDDING_MODEL,
     PORT,
+    LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_SECRET_KEY,
+    LANGFUSE_BASE_URL,
+    NODE_ENV,
   } = process.env;
 
   const missingVars = [];
@@ -22,6 +26,9 @@ export function getConfig() {
   if (!DATABASE_URL) missingVars.push("DATABASE_URL");
   if (!QDRANT_URL) missingVars.push("QDRANT_URL");
   if (!API_KEY) missingVars.push("API_KEY");
+  if (!LANGFUSE_PUBLIC_KEY) missingVars.push("LANGFUSE_PUBLIC_KEY");
+  if (!LANGFUSE_SECRET_KEY) missingVars.push("LANGFUSE_SECRET_KEY");
+  if (!LANGFUSE_BASE_URL) missingVars.push("LANGFUSE_BASE_URL");
 
   if (missingVars.length > 0) {
     throw new Error(
@@ -39,5 +46,9 @@ export function getConfig() {
     QDRANT_COLLECTION_NAME: QDRANT_COLLECTION_NAME || "documents",
     DEFAULT_EMBEDDING_MODEL: DEFAULT_EMBEDDING_MODEL || "openai/bge-m3:latest",
     PORT: PORT ? parseInt(PORT, 10) : 4000,
+    LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_SECRET_KEY,
+    LANGFUSE_BASE_URL,
+    NODE_ENV: NODE_ENV || "development",
   };
 }

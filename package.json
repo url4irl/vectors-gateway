@@ -84,6 +84,7 @@
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.2",
     "express": "^4.21.2",
+    "langfuse": "^3.38.5",
     "mathjs": "^12.4.3",
     "natural": "^6.12.0",
     "node-fetch": "^2.6.1",

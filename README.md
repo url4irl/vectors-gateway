@@ -11,6 +11,10 @@ A **Sidecar service** for applications that need vector database functionality t
   - [Option 2: Direct API Integration](#option-2-direct-api-integration)
   - [Client Library Features](#client-library-features)
   - [How It Works](#how-it-works)
+- [Observability \& Distributed Tracing](#observability--distributed-tracing)
+  - [Langfuse Integration](#langfuse-integration)
+  - [Distributed Tracing](#distributed-tracing)
+    - [Trace Headers](#trace-headers)
 - [Development, Contributing and Deployment](#development-contributing-and-deployment)
   - [API](#api)
   - [Environment Variables](#environment-variables)
@@ -35,6 +39,8 @@ This service is designed to be deployed alongside your main application as a com
 - **Focused responsibility**: Handles only vector database operations
 - **API-driven**: Communicates with your application via REST API
 - **Intelligent Processing**: Uses semantic chunking for optimal document understanding
+- **Full Observability**: Built-in distributed tracing and comprehensive monitoring
+- **Enterprise-Grade**: Production-ready with complete observability and distributed context propagation
 
 ### Use Cases
 
@@ -69,6 +75,7 @@ graph TB
     LiteLLM[LiteLLM Service]
     Qdrant[(Qdrant Vector DB)]
     PostgreSQL[(PostgreSQL)]
+    Langfuse[Langfuse<br/>Observability]
     
     %% Client Library
     CLIENT[Client Library<br/>lib/client]
@@ -89,24 +96,32 @@ graph TB
     VEC --> Qdrant
     DOC --> PostgreSQL
     
+    %% Observability Flow
+    VG_API -.->|Traces & Metrics| Langfuse
+    EMB -.->|Performance Metrics| Langfuse
+    
     %% Styling
     classDef app fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef sidecar fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef external fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef database fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
     classDef client fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef observability fill:#f1f8e9,stroke:#689f38,stroke-width:2px
     
     class UI,BL,API app
     class VG_API,DOC,EMB,VEC sidecar
     class LiteLLM external
     class Qdrant,PostgreSQL database
     class CLIENT client
+    class Langfuse observability
 ```
 
 **Key Points:**
 - **Sidecar Pattern**: Vectors Gateway runs alongside your application
 - **Two Integration Options**: Use the TypeScript client library or direct API calls
 - **Single Responsibility**: Your app handles business logic, Vectors Gateway handles vector operations
+- **Complete Observability**: All operations are tracked and monitored through Langfuse
+- **Distributed Tracing**: Full request context maintained across service boundaries
 - **Data Isolation**: All operations are isolated by userId, knowledgeBaseId, and documentId
 
 ## Integration Methods
@@ -189,6 +204,41 @@ As a Sidecar service, the Vectors Gateway operates as follows:
    - **Document Level**: Search within a specific document
    - **Configurable Scoring**: Adjustable similarity threshold (default: 0.5)
 
+## Observability & Distributed Tracing
+
+The Vectors Gateway includes comprehensive observability features powered by **Langfuse** and **distributed tracing** to provide complete visibility into your vector operations.
+
+### Langfuse Integration
+
+The service automatically tracks and monitors all operations through Langfuse:
+
+- **Document Processing Pipeline**: Complete visibility into document ingestion, chunking, embedding generation, and vector storage
+- **Search Operations**: Track query embedding, vector similarity search, and result ranking
+- **Performance Metrics**: Monitor embedding generation time, storage performance, and search latency
+- **Error Tracking**: Comprehensive error logging with full context and stack traces
+- **User Analytics**: Track usage patterns, document processing volumes, and search performance per user
+
+### Distributed Tracing
+
+The service implements **Distributed Tracing**, allowing you to:
+
+- **Track requests across service boundaries**
+- **Maintain request context through the entire call chain** 
+- **Correlate logs and metrics across multiple services**
+- **Debug complex distributed systems**
+
+The service supports distributed tracing to maintain request context across service boundaries:
+
+#### Trace Headers
+
+The service supports multiple trace header formats for maximum compatibility:
+
+- **`x-trace-id`**: Primary trace ID header
+- **`x-b3-traceid`**: B3 format (Zipkin compatibility)
+- **`traceparent`**: OpenTelemetry format
+- **`x-span-id`**: Span ID for nested operations
+- **`x-parent-trace-id`**: Parent trace context
+
 ## Development, Contributing and Deployment
 
 ```bash
@@ -210,6 +260,7 @@ Swagger UI is available at `/docs` when service is running. OpenAPI spec: [`open
 ### Environment Variables
 
 - `PORT` (default: 4000)
+- `NODE_ENV` (default: development)
 - `API_KEY` (required) - API key for authentication
 - `LITELLM_BASE_URL` (e.g., http://localhost:4000 for your LiteLLM proxy)
 - `LITELLM_API_KEY` (you must generate an API key from your LiteLLM instance)
@@ -217,6 +268,9 @@ Swagger UI is available at `/docs` when service is running. OpenAPI spec: [`open
 - `QDRANT_API_KEY` (optional)
 - `QDRANT_COLLECTION_NAME` (default: documents)
 - `DEFAULT_EMBEDDING_MODEL` (default: openai/bge-m3:latest. Note, this is not an OpenAI model, it's a model from BAAI. It is prefixed with openai/ to inform LiteLLM to use the OpenAI API format (via Ollama).)
+- `LANGFUSE_PUBLIC_KEY` (required) - Your Langfuse public key
+- `LANGFUSE_SECRET_KEY` (required) - Your Langfuse secret key
+- `LANGFUSE_BASE_URL` (required) - Langfuse instance URL
 
 ### Database Management
 
