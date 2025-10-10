@@ -15,4 +15,7 @@ module.exports = {
   testTimeout: 30000,
   forceExit: true,
   detectOpenHandles: true,
+  moduleNameMapper: {
+    "^langfuse$": "<rootDir>/tests/__mocks__/langfuse.ts",
+  },
 };

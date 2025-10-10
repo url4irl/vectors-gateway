@@ -15,6 +15,7 @@ A **Sidecar service** for applications that need vector database functionality t
   - [Langfuse Integration](#langfuse-integration)
   - [Distributed Tracing](#distributed-tracing)
     - [Trace Headers](#trace-headers)
+    - [Client Library with Distributed Tracing](#client-library-with-distributed-tracing)
 - [Development, Contributing and Deployment](#development-contributing-and-deployment)
   - [API](#api)
   - [Environment Variables](#environment-variables)
@@ -238,6 +239,30 @@ The service supports multiple trace header formats for maximum compatibility:
 - **`traceparent`**: OpenTelemetry format
 - **`x-span-id`**: Span ID for nested operations
 - **`x-parent-trace-id`**: Parent trace context
+
+#### Client Library with Distributed Tracing
+
+The TypeScript client library includes built-in support for distributed tracing:
+
+```typescript
+import { VectorsGatewayClient, TraceUtils } from '@url4irl/vectors-gateway';
+
+// Create client with trace headers
+const traceId = TraceUtils.generateTraceId();
+const client = new VectorsGatewayClient(apiKey, baseUrl, { traceId });
+
+// All operations will be linked in the same trace
+const results = await client.searchDocuments("machine learning", 1, 1);
+const stored = await client.storeDocument("AI content", 1, 1, 123);
+
+// Create child spans for specific operations
+const childClient = client.withTraceHeaders(
+  TraceUtils.createChildSpanHeaders(traceId)
+);
+await childClient.deleteDocument(123, 1, 1);
+```
+
+All operations will appear as linked spans in Langfuse, providing complete visibility into your vector operations.
 
 ## Development, Contributing and Deployment
 

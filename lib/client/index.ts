@@ -88,14 +88,98 @@ export interface ApiError {
   };
 }
 
+// Trace Header Configuration
+export interface TraceHeaders {
+  traceId?: string;
+  spanId?: string;
+  parentTraceId?: string;
+}
+
+// Trace utilities
+export class TraceUtils {
+  /**
+   * Generate a new trace ID (UUID v4 format)
+   */
+  static generateTraceId(): string {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+      /[xy]/g,
+      function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      }
+    );
+  }
+
+  /**
+   * Generate a new span ID (UUID v4 format)
+   */
+  static generateSpanId(): string {
+    return this.generateTraceId();
+  }
+
+  /**
+   * Create trace headers with a new trace ID
+   */
+  static createTraceHeaders(traceId?: string): TraceHeaders {
+    return {
+      traceId: traceId || this.generateTraceId(),
+    };
+  }
+
+  /**
+   * Create trace headers for a child span
+   */
+  static createChildSpanHeaders(
+    parentTraceId: string,
+    spanId?: string
+  ): TraceHeaders {
+    return {
+      traceId: parentTraceId,
+      spanId: spanId || this.generateSpanId(),
+      parentTraceId,
+    };
+  }
+}
+
 // API Client
 export class VectorsGatewayClient {
   private baseUrl: string;
   private apiKey: string;
+  private traceHeaders: TraceHeaders;
 
-  constructor(apiKey: string, baseUrl: string) {
+  constructor(
+    apiKey: string,
+    baseUrl: string,
+    traceHeaders: TraceHeaders = {}
+  ) {
     this.baseUrl = baseUrl;
     this.apiKey = apiKey;
+    this.traceHeaders = traceHeaders;
+  }
+
+  /**
+   * Update trace headers for this client instance
+   */
+  setTraceHeaders(traceHeaders: TraceHeaders): void {
+    this.traceHeaders = { ...this.traceHeaders, ...traceHeaders };
+  }
+
+  /**
+   * Create a new client instance with updated trace headers
+   */
+  withTraceHeaders(traceHeaders: TraceHeaders): VectorsGatewayClient {
+    return new VectorsGatewayClient(this.apiKey, this.baseUrl, {
+      ...this.traceHeaders,
+      ...traceHeaders,
+    });
+  }
+
+  /**
+   * Get current trace headers
+   */
+  getTraceHeaders(): TraceHeaders {
+    return { ...this.traceHeaders };
   }
 
   private async _request<T>(
@@ -106,11 +190,24 @@ export class VectorsGatewayClient {
   ): Promise<T> {
     const url = new URL(`${this.baseUrl}${path}`);
 
+    // Build trace headers
+    const traceHeaders: Record<string, string> = {};
+    if (this.traceHeaders.traceId) {
+      traceHeaders["x-trace-id"] = this.traceHeaders.traceId;
+    }
+    if (this.traceHeaders.spanId) {
+      traceHeaders["x-span-id"] = this.traceHeaders.spanId;
+    }
+    if (this.traceHeaders.parentTraceId) {
+      traceHeaders["x-parent-trace-id"] = this.traceHeaders.parentTraceId;
+    }
+
     const options: RequestInit = {
       method,
       headers: {
         "Content-Type": "application/json",
         "x-api-key": this.apiKey,
+        ...traceHeaders,
         ...headers,
       },
     };
@@ -134,6 +231,22 @@ export class VectorsGatewayClient {
 
   /**
    * Search for similar documents using semantic search
+   *
+   * @param query - The search query string
+   * @param userId - User ID for data isolation
+   * @param knowledgeBaseId - Knowledge base ID for data isolation
+   * @param options - Additional search options
+   * @returns Promise with search results
+   *
+   * @example
+   * ```typescript
+   * // Basic search
+   * const results = await client.searchDocuments("machine learning", 1, 1);
+   *
+   * // Search with trace headers
+   * const clientWithTrace = client.withTraceHeaders({ traceId: "my-trace-id" });
+   * const results = await clientWithTrace.searchDocuments("AI", 1, 1);
+   * ```
    */
   async searchDocuments(
     query: string,
@@ -197,6 +310,22 @@ export class VectorsGatewayClient {
 
   /**
    * Store a document in the knowledge base
+   *
+   * @param content - Document content to store
+   * @param userId - User ID for data isolation
+   * @param knowledgeBaseId - Knowledge base ID for data isolation
+   * @param documentId - Unique document identifier
+   * @returns Promise with storage confirmation
+   *
+   * @example
+   * ```typescript
+   * // Basic document storage
+   * const result = await client.storeDocument("Document content", 1, 1, 123);
+   *
+   * // Store with trace headers
+   * const clientWithTrace = client.withTraceHeaders({ traceId: "my-trace-id" });
+   * const result = await clientWithTrace.storeDocument("Content", 1, 1, 123);
+   * ```
    */
   async storeDocument(
     content: string,
@@ -216,6 +345,21 @@ export class VectorsGatewayClient {
 
   /**
    * Delete a document and all its vectors
+   *
+   * @param documentId - Document ID to delete
+   * @param userId - User ID for data isolation
+   * @param knowledgeBaseId - Knowledge base ID for data isolation
+   * @returns Promise with deletion confirmation
+   *
+   * @example
+   * ```typescript
+   * // Basic document deletion
+   * const result = await client.deleteDocument(123, 1, 1);
+   *
+   * // Delete with trace headers
+   * const clientWithTrace = client.withTraceHeaders({ traceId: "my-trace-id" });
+   * const result = await clientWithTrace.deleteDocument(123, 1, 1);
+   * ```
    */
   async deleteDocument(
     documentId: number,
@@ -252,31 +396,36 @@ export class VectorsGatewayClient {
 export default VectorsGatewayClient;
 
 /**
- * Example usage:
+ * Example usage with distributed tracing:
  *
  * ```typescript
- * import { VectorsGatewayClient } from '@url4irl/vectors-gateway';
+ * import { VectorsGatewayClient, TraceUtils } from '@url4irl/vectors-gateway';
  *
+ * // Basic client without tracing
  * const client = new VectorsGatewayClient('your-api-key', 'http://your-vectors-gateway-url');
  *
- * // Store a document
- * const storeResult = await client.storeDocument(
+ * // Client with trace headers for distributed tracing
+ * const traceId = TraceUtils.generateTraceId();
+ * const clientWithTrace = client.withTraceHeaders({ traceId });
+ *
+ * // Store a document with tracing
+ * const storeResult = await clientWithTrace.storeDocument(
  *   'This is a document about machine learning algorithms...',
  *   123, // userId
  *   456, // knowledgeBaseId
  *   789  // documentId
  * );
  *
- * // Search across knowledge base
- * const results = await client.searchKnowledgeBase(
+ * // Search across knowledge base with the same trace
+ * const results = await clientWithTrace.searchKnowledgeBase(
  *   'machine learning algorithms',
  *   123,
  *   456,
  *   { limit: 10, scoreThreshold: 0.8 }
  * );
  *
- * // Search within specific document
- * const docResults = await client.searchInDocument(
+ * // Search within specific document with the same trace
+ * const docResults = await clientWithTrace.searchInDocument(
  *   'neural networks',
  *   123,
  *   456,
@@ -284,10 +433,10 @@ export default VectorsGatewayClient;
  *   { limit: 5 }
  * );
  *
- * // Delete a document
- * await client.deleteDocument(789, 123, 456);
+ * // Delete a document with the same trace
+ * await clientWithTrace.deleteDocument(789, 123, 456);
  *
- * // Check service health
- * const health = await client.healthCheck();
+ * // All operations will be linked in the same trace in Langfuse
+ * console.log('Found', results.matches.length, 'similar documents');
  * ```
  */
