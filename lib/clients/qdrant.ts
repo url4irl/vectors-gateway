@@ -88,6 +88,13 @@ class QdrantHttpClient {
       wait: true,
     });
   }
+
+  async healthCheck() {
+    // Simple health check by fetching collections
+    const response = await this.client.api().livez({});
+
+    return response.ok;
+  }
 }
 
 export const qdrantCient = new QdrantHttpClient();

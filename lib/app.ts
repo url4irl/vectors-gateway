@@ -8,6 +8,7 @@ import { DocumentProcessor } from "./ai/document-processor";
 import { getConfig } from "./config";
 import { traceMiddleware, getTraceContext } from "./utils/tracing";
 import { langfuse } from "./clients/langfuse";
+import { qdrantCient } from "./clients/qdrant";
 
 const { QDRANT_COLLECTION_NAME, LITELLM_API_KEY, LITELLM_BASE_URL, API_KEY } =
   getConfig();
@@ -56,7 +57,6 @@ export function createApp(enableSwagger: boolean = true): Application {
     next();
   });
 
-  // TODO: Re-enable Swagger documentation after fixing type compatibility
   // Swagger documentation route (only in non-test environments)
   if (enableSwagger) {
     try {
@@ -71,6 +71,24 @@ export function createApp(enableSwagger: boolean = true): Application {
   }
 
   app.get("/", async (_, res) => {
+    const langfuseConnected = await langfuse.api.healthHealth();
+    if (langfuseConnected?.status !== "OK") {
+      return res.status(503).json({
+        error: {
+          message: "Langfuse API is not available",
+        },
+      });
+    }
+
+    const qdrantConnected = await qdrantCient.healthCheck();
+    if (!qdrantConnected) {
+      return res.status(503).json({
+        error: {
+          message: "Qdrant API is not available",
+        },
+      });
+    }
+
     res.json({
       message: "Vectors Gateway is running",
       documentation: "http://localhost:4000/docs",
