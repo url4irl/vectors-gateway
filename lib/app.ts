@@ -71,6 +71,20 @@ export function createApp(enableSwagger: boolean = true): Application {
   }
 
   app.get("/", async (_, res) => {
+    res.json({
+      message: "Vectors Gateway is running",
+      documentation: "http://localhost:4000/docs",
+      apiInfo: {
+        endpoints: {
+          retrieval: "POST /v1/retrieval/search",
+          documents:
+            "POST /v1/documents (ingest), DELETE /v1/documents/:documentId (remove)",
+        },
+      },
+    });
+  });
+
+  app.get("/health", async (_, res) => {
     const langfuseConnected = await langfuse.api.healthHealth();
     if (langfuseConnected?.status !== "OK") {
       return res.status(503).json({
@@ -90,15 +104,9 @@ export function createApp(enableSwagger: boolean = true): Application {
     }
 
     res.json({
-      message: "Vectors Gateway is running",
-      documentation: "http://localhost:4000/docs",
-      apiInfo: {
-        endpoints: {
-          retrieval: "POST /v1/retrieval/search",
-          documents:
-            "POST /v1/documents (ingest), DELETE /v1/documents/:documentId (remove)",
-        },
-      },
+      status: "ok",
+      langfuse: langfuseConnected,
+      qdrant: qdrantConnected,
     });
   });
 
