@@ -1,9 +1,9 @@
 import request from "supertest";
 import { createApp } from "../lib/app";
 import { testDb } from "./test-db";
-import { getConfig } from "../lib/config";
+import { config } from "../lib/config";
 
-const { API_KEY } = getConfig();
+const { API_KEY } = config;
 
 describe("Vectors Gateway E2E Tests", () => {
   let app: any;

@@ -1,8 +1,8 @@
 import { QdrantClient } from "@qdrant/qdrant-js";
 import { Schemas } from "@qdrant/js-client-rest";
-import { getConfig } from "../config";
+import { config } from "../config";
 
-const { QDRANT_URL, QDRANT_API_KEY } = getConfig();
+const { QDRANT_URL, QDRANT_API_KEY } = config;
 
 // Create a wrapper class to maintain the same interface as the custom client
 class QdrantHttpClient {

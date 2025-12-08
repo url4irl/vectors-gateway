@@ -6,7 +6,7 @@ import {
 } from "../db/vector-metadata";
 import { LiteLLMClient } from "./sdk/litellm-client";
 import { SemanticChunkingService } from "./semantic-chunking";
-import { getConfig } from "../config";
+import { config } from "../config";
 import { VectorizationResult, ChunkedDocument } from "./vectorization";
 import { langfuse } from "../clients/langfuse";
 
@@ -19,7 +19,7 @@ export class DocumentProcessor {
   constructor(qdrantCollectionName: string = "documents", traceId?: string) {
     this.traceId = traceId;
     this.qdrantService = new QdrantService(qdrantCollectionName, 1024, traceId);
-    const { LITELLM_BASE_URL, LITELLM_API_KEY } = getConfig();
+    const { LITELLM_BASE_URL, LITELLM_API_KEY } = config;
     this.litellmClient = new LiteLLMClient(
       LITELLM_BASE_URL,
       LITELLM_API_KEY,

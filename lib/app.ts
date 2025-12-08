@@ -5,13 +5,14 @@ import type { Application } from "express";
 import { LiteLLMClient } from "./ai/sdk/litellm-client";
 import { QdrantService } from "./ai/qdrant-service";
 import { DocumentProcessor } from "./ai/document-processor";
-import { getConfig } from "./config";
+import { config } from "./config";
 import { traceMiddleware, getTraceContext } from "./utils/tracing";
 import { langfuse } from "./clients/langfuse";
 import { qdrantCient } from "./clients/qdrant";
+import { defaultRateLimiter, strictRateLimiter } from "./security/rate-limiter";
 
 const { QDRANT_COLLECTION_NAME, LITELLM_API_KEY, LITELLM_BASE_URL, API_KEY } =
-  getConfig();
+  config;
 
 export function createApp(enableSwagger: boolean = true): Application {
   const app = express();
@@ -23,6 +24,9 @@ export function createApp(enableSwagger: boolean = true): Application {
 
   // Add distributed tracing middleware
   app.use(traceMiddleware);
+
+  // Apply rate limiting to all routes (before authentication)
+  app.use(defaultRateLimiter);
 
   // API Key authentication middleware
   app.use((req, res, next) => {
@@ -235,8 +239,8 @@ export function createApp(enableSwagger: boolean = true): Application {
     }
   });
 
-  // Document ingestion endpoint
-  app.post("/v1/documents", async (req, res) => {
+  // Document ingestion endpoint (with strict rate limiting)
+  app.post("/v1/documents", strictRateLimiter, async (req, res) => {
     const traceContext = getTraceContext(req);
     const trace = langfuse.trace({
       name: "document-ingestion",

@@ -1,8 +1,8 @@
 import { createApp } from "./app";
 
-import { getConfig } from "./config";
+import { config } from "./config";
 
-const { PORT } = getConfig();
+const { PORT } = config;
 
 const app = createApp();
 

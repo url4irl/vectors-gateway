@@ -1,4 +1,4 @@
-import { getConfig } from "../../config";
+import { config } from "../../config";
 import { EmbeddingResponse } from "./types";
 import { langfuse } from "../../clients/langfuse";
 
@@ -21,12 +21,12 @@ export class LiteLLMClient {
             userId: this.userId,
             textCount: texts.length,
             baseURL: this.baseURL,
-            model: getConfig().DEFAULT_EMBEDDING_MODEL,
+            model: config.DEFAULT_EMBEDDING_MODEL,
           },
         })
       : langfuse.generation({
           name: "embeddings-call",
-          model: getConfig().DEFAULT_EMBEDDING_MODEL,
+          model: config.DEFAULT_EMBEDDING_MODEL,
           input: texts,
           metadata: {
             userId: this.userId,
@@ -62,7 +62,7 @@ export class LiteLLMClient {
               Authorization: `Bearer ${this.apiKey}`,
             },
             body: JSON.stringify({
-              model: getConfig().DEFAULT_EMBEDDING_MODEL,
+              model: config.DEFAULT_EMBEDDING_MODEL,
               input: text, // Single text, not array
               tags: [`userId:${this.userId}`],
             }),

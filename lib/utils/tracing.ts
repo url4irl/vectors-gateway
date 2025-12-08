@@ -162,11 +162,11 @@ export function traceMiddleware(
  * Get trace context from request
  */
 export function getTraceContext(req: Request) {
-  return (
-    (req as any).traceContext || {
-      traceId: generateTraceId(),
-      spanId: null,
-      parentTraceId: null,
-    }
-  );
+  const context = (req as any).traceContext || {
+    traceId: generateTraceId(),
+    spanId: null,
+    parentTraceId: null,
+  };
+
+  return context;
 }

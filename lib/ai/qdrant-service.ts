@@ -1,7 +1,11 @@
 import { qdrantCient } from "../clients/qdrant";
-import { getConfig } from "../config";
+import { config } from "../config";
 import { VectorizationResult } from "./vectorization";
 import { langfuse } from "../clients/langfuse";
+import {
+  encryptDocumentContent,
+  decryptDocumentContent,
+} from "../security/encryption-gate";
 
 export interface QdrantPoint {
   id: string | number;
@@ -36,7 +40,7 @@ export class QdrantService {
     traceId?: string
   ) {
     // Include embedding model name in collection name to ensure model-specific collections
-    const embeddingModel = getConfig().DEFAULT_EMBEDDING_MODEL.replace(
+    const embeddingModel = config.DEFAULT_EMBEDDING_MODEL.replace(
       /[^a-zA-Z0-9_-]/g,
       "_"
     );
@@ -184,6 +188,10 @@ export class QdrantService {
 
       await this.initializeCollection();
 
+      console.log(
+        `[QdrantService] Encrypting ${vectorizationResult.chunks.length} chunks before storage`
+      );
+
       const points: QdrantPoint[] = vectorizationResult.chunks.map(
         (chunk, index) => {
           const vector = vectorizationResult.embeddings[index];
@@ -205,8 +213,10 @@ export class QdrantService {
               userId: chunk.metadata.userId,
               chunkIndex: chunk.metadata.chunkIndex,
               totalChunks: chunk.metadata.totalChunks,
-              content: chunk.content,
-              originalContent: chunk.metadata.originalContent,
+              content: encryptDocumentContent(chunk.content),
+              originalContent: encryptDocumentContent(
+                chunk.metadata.originalContent
+              ),
               createdAt: new Date().toISOString(),
             },
           };
@@ -343,13 +353,26 @@ export class QdrantService {
         score_threshold: scoreThreshold,
       });
 
-      const results = searchResult.map((result) => ({
-        id: result.id as string,
-        score: result.score,
-        payload: result.payload as QdrantPoint["payload"],
-      }));
+      console.log(
+        `[QdrantService] Found ${searchResult.length} documents, decrypting content...`
+      );
 
-      console.log(`[QdrantService] Found ${results.length} similar documents`);
+      const results = searchResult.map((result) => {
+        const payload = result.payload as QdrantPoint["payload"];
+        return {
+          id: result.id as string,
+          score: result.score,
+          payload: {
+            ...payload,
+            content: decryptDocumentContent(payload.content),
+            originalContent: decryptDocumentContent(payload.originalContent),
+          },
+        };
+      });
+
+      console.log(
+        `[QdrantService] Successfully decrypted ${results.length} documents`
+      );
 
       generation.end({
         output: {

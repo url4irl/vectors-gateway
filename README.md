@@ -19,6 +19,14 @@ A **Sidecar service** for applications that need vector database functionality t
 - [Development, Contributing and Deployment](#development-contributing-and-deployment)
   - [API](#api)
   - [Environment Variables](#environment-variables)
+    - [Core Application](#core-application)
+    - [LiteLLM Configuration](#litellm-configuration)
+    - [Qdrant Configuration](#qdrant-configuration)
+    - [Database](#database)
+    - [Langfuse (Observability)](#langfuse-observability)
+    - [Security \& Encryption](#security--encryption)
+    - [Rate Limiting](#rate-limiting)
+    - [OpenTelemetry (Optional)](#opentelemetry-optional)
   - [Database Management](#database-management)
     - [Database Migration Lifecycle](#database-migration-lifecycle)
       - [Production Environment](#production-environment)
@@ -42,6 +50,7 @@ This service is designed to be deployed alongside your main application as a com
 - **Intelligent Processing**: Uses semantic chunking for optimal document understanding
 - **Full Observability**: Built-in distributed tracing and comprehensive monitoring
 - **Enterprise-Grade**: Production-ready with complete observability and distributed context propagation
+- **Secure by Default**: AES-256-GCM encryption for document content at rest with zero-downtime migration support
 
 ### Use Cases
 
@@ -284,18 +293,43 @@ Swagger UI is available at `/docs` when service is running. OpenAPI spec: [`open
 
 ### Environment Variables
 
+#### Core Application
 - `PORT` (default: 4000)
 - `NODE_ENV` (default: development)
 - `API_KEY` (required) - API key for authentication
-- `LITELLM_BASE_URL` (e.g., http://localhost:4000 for your LiteLLM proxy)
-- `LITELLM_API_KEY` (you must generate an API key from your LiteLLM instance)
-- `QDRANT_URL` (default: http://localhost:6333)
+
+#### LiteLLM Configuration
+- `LITELLM_BASE_URL` (required) - e.g., http://localhost:4000 for your LiteLLM proxy
+- `LITELLM_API_KEY` (required) - API key from your LiteLLM instance
+- `DEFAULT_EMBEDDING_MODEL` (default: openai/bge-m3:latest) - Note: this is not an OpenAI model, it's a model from BAAI. It is prefixed with openai/ to inform LiteLLM to use the OpenAI API format (via Ollama)
+
+#### Qdrant Configuration
+- `QDRANT_URL` (required) - e.g., http://localhost:6333
 - `QDRANT_API_KEY` (optional)
 - `QDRANT_COLLECTION_NAME` (default: documents)
-- `DEFAULT_EMBEDDING_MODEL` (default: openai/bge-m3:latest. Note, this is not an OpenAI model, it's a model from BAAI. It is prefixed with openai/ to inform LiteLLM to use the OpenAI API format (via Ollama).)
+
+#### Database
+- `DATABASE_URL` (required) - PostgreSQL connection string
+
+#### Langfuse (Observability)
 - `LANGFUSE_PUBLIC_KEY` (required) - Your Langfuse public key
 - `LANGFUSE_SECRET_KEY` (required) - Your Langfuse secret key
 - `LANGFUSE_BASE_URL` (required) - Langfuse instance URL
+
+#### Security & Encryption
+- `ENCRYPTION_KEY` (required) - 64-character hex string for AES-256-GCM encryption. Generate with: `openssl rand -hex 32`
+  - **Note**: Document content is encrypted at rest using AES-256-GCM
+- `ALLOWED_IPS` (optional) - Comma-separated list of IPs to bypass rate limiting
+- `ALLOWED_DOMAINS` (optional) - Comma-separated list of allowed domains
+
+#### Rate Limiting
+- `RATE_LIMIT_WINDOW_MS` (default: 900000 / 15 minutes) - Time window for rate limiting
+- `RATE_LIMIT_MAX_REQUESTS` (default: 100) - Max requests per window for general endpoints
+- `RATE_LIMIT_STRICT_WINDOW_MS` (default: 60000 / 1 minute) - Time window for strict rate limiting
+- `RATE_LIMIT_STRICT_MAX_REQUESTS` (default: 10) - Max requests per window for resource-intensive endpoints
+
+#### OpenTelemetry (Optional)
+- `OTEL_EXPORTER_OTLP_ENDPOINT` (optional) - OpenTelemetry collector endpoint for traces and logs
 
 ### Database Management
 

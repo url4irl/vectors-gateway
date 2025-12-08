@@ -1,9 +1,6 @@
 import { Langfuse } from "langfuse";
 import pkg from "../../package.json";
-import { getConfig } from "../config";
-
-// Get configuration
-const config = getConfig();
+import { config } from "../config";
 
 // Create a centralized Langfuse client instance
 export const langfuse = new Langfuse({
