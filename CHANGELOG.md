@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/url4irl/vectors-gateway/compare/v1.4.0...v1.5.0) (2025-12-08)
+
+
+### Features
+
+* encryption at rest ([bda3b34](https://github.com/url4irl/vectors-gateway/commit/bda3b344d3dcad2e9b11d835ed0d2255d7c7f947))
+
 # [1.4.0](https://github.com/url4irl/vectors-gateway/compare/v1.3.0...v1.4.0) (2025-10-10)
 
 
