@@ -19,6 +19,7 @@ interface Env {
   LITELLM_API_KEY: string;
   LITELLM_BASE_URL: string;
   DEFAULT_EMBEDDING_MODEL: string;
+  DEFAULT_EMBEDDING_DIMENSIONS: number;
 
   // Langfuse
   LANGFUSE_PUBLIC_KEY: string;
@@ -197,6 +198,11 @@ function getEnv(): Env {
       "DEFAULT_EMBEDDING_MODEL",
       process.env.DEFAULT_EMBEDDING_MODEL,
       "openai/bge-m3:latest"
+    ),
+    DEFAULT_EMBEDDING_DIMENSIONS: validateOptionalNumberEnvVar(
+      "DEFAULT_EMBEDDING_DIMENSIONS",
+      process.env.DEFAULT_EMBEDDING_DIMENSIONS,
+      1024
     ),
 
     // Langfuse

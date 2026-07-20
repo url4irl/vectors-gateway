@@ -191,7 +191,7 @@ export function createApp(enableSwagger: boolean = true): Application {
 
       const qdrant = new QdrantService(
         defaultCollection,
-        1024,
+        config.DEFAULT_EMBEDDING_DIMENSIONS,
         traceContext.traceId
       );
       const results = await qdrant.searchSimilarDocuments(

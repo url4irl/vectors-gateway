@@ -18,7 +18,11 @@ export class DocumentProcessor {
 
   constructor(qdrantCollectionName: string = "documents", traceId?: string) {
     this.traceId = traceId;
-    this.qdrantService = new QdrantService(qdrantCollectionName, 1024, traceId);
+    this.qdrantService = new QdrantService(
+      qdrantCollectionName,
+      config.DEFAULT_EMBEDDING_DIMENSIONS,
+      traceId
+    );
     const { LITELLM_BASE_URL, LITELLM_API_KEY } = config;
     this.litellmClient = new LiteLLMClient(
       LITELLM_BASE_URL,
