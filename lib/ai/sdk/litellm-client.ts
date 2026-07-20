@@ -64,6 +64,7 @@ export class LiteLLMClient {
             body: JSON.stringify({
               model: config.DEFAULT_EMBEDDING_MODEL,
               input: text, // Single text, not array
+              dimensions: config.DEFAULT_EMBEDDING_DIMENSIONS,
               tags: [`userId:${this.userId}`],
             }),
           });
